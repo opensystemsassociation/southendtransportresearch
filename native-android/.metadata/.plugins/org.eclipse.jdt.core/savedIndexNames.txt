@@ -1,0 +1,3 @@
+INDEX VERSION 1.126+/home/gareth/Dropbox/Projects/OSA-SOUTHEND-TRANSPORT/production/southendtransportresearch/native-android/.metadata/.plugins/org.eclipse.jdt.core
+1781591036.index
+1217171743.index

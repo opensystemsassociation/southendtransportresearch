@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename package &apos;com.example.osa_stp_senseme_001&apos; to &apos;uk.org.opensystem.camera_access&apos;&#x0A;- Original project: &apos;OSA-STP-SENSEME-001&apos;&#x0A;- Original element: &apos;OSA-STP-SENSEME-001/src/com.example.osa_stp_senseme_001&apos;&#x0A;- Renamed element: &apos;OSA-STP-SENSEME-001/src/uk.org.opensystem.camera_access&apos;&#x0A;- Update references to refactored element&#x0A;- Update textual occurrences in comments and strings" description="Rename package &apos;com.example.osa_stp_senseme_001&apos;" flags="589830" hierarchical="false" id="org.eclipse.jdt.ui.rename.package" input="/src&lt;com.example.osa_stp_senseme_001" name="uk.org.opensystem.camera_access" qualified="false" references="true" stamp="1363085069433" textual="false" version="1.0"/>
+</session>
