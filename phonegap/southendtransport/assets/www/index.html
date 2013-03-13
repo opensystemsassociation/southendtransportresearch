@@ -28,25 +28,31 @@
     <body>
         <div class="app">
             <dl>
-                <dt>Platform</dt>
-                <dd id="platform">??</dd>
-                <dt>Version</dt>
-                <dd id="version">??</dd>
-                <dt>UUID</dt>
-                <dd id="uuid">??</dd>
-                <dt>Name</dt>
-                <dd id="name">??</dd>
-                <dt>Location</dt>
-                <dd id="location">??</dd>
+                <dt>Now</dt>
+                <dd class="time" data-bind-time="now-str">??</dd>
+                <dt>Start</dt>
+                <dd class="time" data-bind-time="start-str">??</dd>
+                <dt>Duration</dt>
+                <dd class="time" data-bind-time="duration">??</dd>
+                <hr/>
+                <dt>Lat</dt>
+                <dd class="location" data-bind-geoloc="lat">??</dd>
+                <dt>Long</dt>
+                <dd class="location" data-bind-geoloc="lon">??</dd>
+                <dt>GeoCount</dt>
+                <dd class="location" data-bind-geoloc="count">??</dd>
+                <hr/>
                 <dt>Accel</dt>
                 <dd id="accel">??</dd>
             </dl>
+            <button onclick="stp.startActivity();">Start</button>
         </div>
         <script type="text/javascript" src="cordova-2.5.0.js"></script>
-        <!-- <script type="text/javascript" src="js/index.js"></script> -->
-        <script type="text/javascript" src="main.js"></script>
+        <script type="text/javascript" src="js/lib/jquery/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="js/app.js"></script>
         <script type="text/javascript">
-            init();
+            var stp = STP.app();
+            stp.initialise();
         </script>
     </body>
 </html>
