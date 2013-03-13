@@ -1,0 +1,3 @@
+[submodule "leaflet-multi-map"]
+	path = leaflet-multi-map
+	url = git@github.com:anthillsocial/leaflet-multi-map.git
