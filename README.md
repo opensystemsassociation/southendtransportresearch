@@ -3,7 +3,7 @@ southendtransport
 A collection of scripts designed to collect transport data.
 =================     
 
-DATA STRUCTURE FOR DATA COLLECTED
+DATA STRUCTURE
 
     {
     	"track" : {
