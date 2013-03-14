@@ -67,7 +67,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 
 	            	    
 	            	if (camera == null) {
-	            		Log.d(TAG, "Camera DID NOT exist.");
 		                camera=Camera.open();
 	                }
 	            	
@@ -84,7 +83,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 	                } else {
 	                	
 	                	// Preview already started. Take another picture.
-	                	Log.d(TAG, "width:" + String.valueOf(preview.getWidth()));
 	                	initPreview(preview.getWidth(), preview.getHeight());
 	                	takePicture();
 	                }
@@ -126,16 +124,16 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
                 Camera.Parameters parameters=camera.getParameters();
                 Camera.Size size=getBestPreviewSize(width, height, parameters);
                 Camera.Size pictureSize=getSmallestPictureSize(parameters);
-                Log.d(TAG, "cameraConfiguring");
                 
                 if (size != null && pictureSize != null) {
+                	
                     parameters.setPreviewSize(size.width, size.height);
-                    parameters.setPictureSize(pictureSize.width,
-                            pictureSize.height);
+                    parameters.setPictureSize(pictureSize.width, pictureSize.height);
                     parameters.setPictureFormat(ImageFormat.JPEG);
                     camera.setParameters(parameters);
                     cameraConfigured=true;
-                 }
+                 
+                }
             }
         }
     }
@@ -192,7 +190,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
         public void surfaceChanged(SurfaceHolder holder, int format,
                 int width, int height) {
         	initPreview(width, height);
-        	camera.startPreview();
             takePicture();
         }
 
@@ -221,11 +218,10 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
     class SavePhotoTask extends AsyncTask<byte[], String, String> {
         @Override
         protected String doInBackground(byte[]... jpeg) {
-            
-        	File photo = new File(Environment.getExternalStoragePublicDirectory(imageDirectory),
-                        imageName);
-            
-            Log.d(TAG, Environment.getExternalStoragePublicDirectory(imageDirectory).getAbsolutePath() + "/" + imageName);
+        	
+        	Log.d(TAG, imageDirectory + "/" + imageName);
+        	File photo = new File(imageDirectory,
+                        imageName);            
             
             // Create the storage directory if it does not exist
             if (! photo.exists()){
@@ -246,7 +242,7 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
                 fos.write(jpeg[0]);
                 fos.close();
                 
-                callbackContext.success(Environment.getExternalStoragePublicDirectory(imageDirectory).getAbsolutePath() + "/" + imageName);
+                callbackContext.success(imageDirectory + "/" + imageName);
             }
             catch (java.io.IOException e) {
                 Log.e("PictureDemo", "Exception in photoCallback", e);
