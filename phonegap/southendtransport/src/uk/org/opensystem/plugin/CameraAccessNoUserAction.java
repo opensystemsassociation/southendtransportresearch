@@ -39,20 +39,30 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 	private SurfaceView preview=null;
     private SurfaceHolder previewHolder=null;
     private Camera camera=null;
+    
     private boolean inPreview=false;
     private boolean cameraConfigured=false;
+    
     private Timer timer = new Timer();
 
+    private String imageDirectory = null;
+    private String imageName = null;
     
 	@Override
 	public boolean execute(String action, JSONArray args, final CallbackContext cbContext) throws JSONException {
-	    if ("takePicture".equals(action)) {
-	        cordova.getActivity().runOnUiThread(new Runnable() {
+
+		if ("takePicture".equals(action)) {    
+			// Save image here.
+			imageDirectory = args.getString(0);
+			imageName = args.getString(1);
+			
+			// Start UI thread in order to show preview.
+	    	cordova.getActivity().runOnUiThread(new Runnable() {
 	            public void run() {
 	            	
 	            	activity = cordova.getActivity(); 
 	            	callbackContext = cbContext;
-	                
+
 	            	preview=(SurfaceView)activity.findViewById(R.id.preview);
 
 	            	    
@@ -94,8 +104,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
         }
         
         camera.startPreview();
-        
-        Log.d(TAG, String.valueOf(photoCallback == null));
         camera.takePicture(null, null, photoCallback);
         
 	}
@@ -110,6 +118,8 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
                         "Exception in setPreviewDisplay()", t);
                 Toast.makeText(activity, t.getMessage(),
                         Toast.LENGTH_LONG).show();
+                
+                callbackContext.error("Failed to set preview display");
             }
 
             if (!cameraConfigured) {
@@ -196,7 +206,7 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
         public void onPictureTaken(byte[] data, Camera c) {
         	Log.d(TAG, String.valueOf(callbackContext == null));
             
-            callbackContext.success("Picture taken. Byte length: " + String.valueOf(data.length));
+        	//callbackContext.success("Picture taken. Byte length: " + String.valueOf(data.length));
         	
         	new SavePhotoTask().execute(data);
         	
@@ -211,11 +221,21 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
     class SavePhotoTask extends AsyncTask<byte[], String, String> {
         @Override
         protected String doInBackground(byte[]... jpeg) {
-            File photo=
-                new File(Environment.getExternalStorageDirectory(),
-                        "photo.jpg");
-
-            Log.d(TAG, Environment.getExternalStorageDirectory().getAbsolutePath());
+            
+        	File photo = new File(Environment.getExternalStoragePublicDirectory(imageDirectory),
+                        imageName);
+            
+            Log.d(TAG, Environment.getExternalStoragePublicDirectory(imageDirectory).getAbsolutePath() + "/" + imageName);
+            
+            // Create the storage directory if it does not exist
+            if (! photo.exists()){
+                if (! photo.mkdirs()){
+                    Log.d(TAG, "failed to create directory");
+                    callbackContext.error("Failed to write");
+                    return null;
+                }
+            }
+            
             if (photo.exists()) {
                 photo.delete();
             }
@@ -225,9 +245,12 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 
                 fos.write(jpeg[0]);
                 fos.close();
+                
+                callbackContext.success(Environment.getExternalStoragePublicDirectory(imageDirectory).getAbsolutePath() + "/" + imageName);
             }
             catch (java.io.IOException e) {
                 Log.e("PictureDemo", "Exception in photoCallback", e);
+                callbackContext.error("Failed to write");
             }
 
             return(null);
