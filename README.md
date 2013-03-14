@@ -11,11 +11,13 @@ DATA STRUCTURE FOR DATA COLLECTED
             "author": "Your Name", 
             "start-time": "000",
             "end-time": "000",
-            "device.name": "???",   
-            "device.cordova": "???",
-            "device.platform": "???",
-            "device.version": "???",
-            "device.uuid": "???"
+            "device" : {
+            	"name": "???",   
+                "cordova": "???",
+                "platform": "???",
+                "version": "???",
+                "uuid": "???"
+            },
             "points" : {
                   "elapsed" 		: [ [1],[6],[11],[16] ],
                   "gps" 			: [ [lat,lng],[lat,lng],[lat,lng],[lat,lng] ],
