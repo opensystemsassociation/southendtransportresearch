@@ -1,4 +1,4 @@
-// Here's where you should write your functions
+// The following has/will be written so as to be as portable/appfurnce independent as possible
 var sub = 0;
 var onoff = 0;
 var fails = 0;
