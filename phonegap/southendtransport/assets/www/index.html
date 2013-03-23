@@ -28,27 +28,27 @@
     <body>
         <div class="app">
             <dl>
-                <dt>Now</dt>
+                <dt class="label">Now</dt>
                 <dd class="time" data-bind-time="now-str">??</dd>
-                <dt>Start</dt>
+                <dt class="label">Start</dt>
                 <dd class="time" data-bind-time="start-str">??</dd>
-                <dt>Duration</dt>
+                <dt class="label">Duration</dt>
                 <dd class="time" data-bind-time="duration">??</dd>
                 <hr/>
-                <dt>Lat</dt>
+                <dt class="label">Lat</dt>
                 <dd class="location" data-bind-geoloc="lat">??</dd>
-                <dt>Long</dt>
+                <dt class="label">Long</dt>
                 <dd class="location" data-bind-geoloc="lon">??</dd>
-                <dt>GeoCount</dt>
+                <dt class="label">GeoCount</dt>
                 <dd class="location" data-bind-geoloc="count">??</dd>
                 <hr/>
-                <dt>Accel</dt>
-                <dd id="accel">??</dd>
+                <dt class="label">Accel</dt>
+                <dd id="accel" data-bind-accel="combined">??</dd>
+                <dt class="label">Shake</dt>
+                <dd id="shake" data-bind-accel="shake">??</dd>
             </dl>
             <hr/>
-            <label for="activitytime">Activity time (minutes):</label>
-            <input type="text" name="activitytime" id="activitytime" value="360"><br>
-            <button onclick="stp.startActivity();">Start</button>
+            <button class="start" onclick="stp.startActivity();">Start</button>
         </div>
         <script type="text/javascript" src="cordova-2.5.0.js"></script>
         <script type="text/javascript" src="js/lib/jquery/jquery-1.9.1.min.js"></script>

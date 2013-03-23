@@ -20,6 +20,10 @@
 package uk.org.opensystem;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+
 import org.apache.cordova.*;
 
 public class southendtransport extends DroidGap
@@ -31,6 +35,29 @@ public class southendtransport extends DroidGap
         // Set by <content src="index.html" /> in config.xml
         super.loadUrl(Config.getStartUrl());
         //super.loadUrl("file:///android_asset/www/index.html")
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.camera_menu, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+        case R.id.switch_cam:
+        	Log.d("southendtransport.java", "Hide - show cam");
+            this.sendJavascript("javascript: stp.switchCamera()");
+            return true;
+        case R.id.stop_activity:
+        	Log.d("southendtransport.java", "Schttop");
+            this.sendJavascript("javascript: stp.stopActivity()");
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
     }
 }
 

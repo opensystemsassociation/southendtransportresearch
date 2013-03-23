@@ -15,7 +15,7 @@ STP.app = function(){
             activityId: 001,
             tickInterval: 1000, // millisecs
             recordInterval : 5,
-            stopAfter : 1*60, // seconds
+            stopAfter : 120*60, // 2 hours maximum.
             dirPrefix : "track"
         };
 
@@ -72,7 +72,16 @@ STP.app = function(){
             'accel'     : new STP.BindableModel( 'accel' )
         };
 
+        this.switchCamera = function() {
+
+            STP.plugins.switchCamera();
+
+        },
+
         this.stopActivity = function() {
+
+            // Stop the ticking!!!!!!
+            clearInterval( tickId );
 
             // Write to file.
             activityDataEntry.createWriter(function( writer ) {
@@ -84,8 +93,7 @@ STP.app = function(){
 
                 }, writeErrorHandler );
 
-            // Stop the ticking!!!!!!
-            clearInterval( tickId );
+            // STP.plugins.releaseCamera();
 
         };
 
@@ -93,36 +101,47 @@ STP.app = function(){
 
             // Get activity time.
             var activitytime = document.getElementById("activitytime");
-            self.config.stopAfter = parseInt( activitytime.value )*60;
 
             // Set start time.
             var now = new Date();
             self.time.set( 'start', Math.round( now.getTime()/1000 ) );
             self.time.set( 'start-str', now.toUTCString() );
 
-            createActivityFile(function(){
+            var startTicking = function() { 
+                if( dataFileCreated === true && cameraReady === true ){
                     tickId = setInterval(tickHandler, self.config.tickInterval);
+                }
+            };
+
+            STP.plugins.prepareCamera(function(result) {
+                    console.log( result.action + " (success)" );
+                    cameraReady = true;
+                    startTicking();
+                },
+                function( e ) {
+                    cameraErrorHandler("Prepare camera failed: " + e); 
+                });
+
+            createActivityFile(function(){
+                    dataFileCreated = true;
+                    startTicking();
                 });
 
         };
 
         // -- Private
         var self = this,
+            dataFileCreated = false,
+            cameraReady = false,
             cameraBusy = false,
             watchId = -1,
             tickId = -1,
             dataDirEntry = {}, // stp root data DirectoryEntry
             activityDirEntry = {}, // activity DirectoryEntry
             activityDataEntry = {}, // rawjson.json FileEntry
+            previousReading = {},
 
             documentReadyHandler = function() {
-
-                document.addEventListener("volumedownbutton", self.stopActivity, false);
-                document.addEventListener("volumeupbutton", function(e) {
-                        alert( 'Arrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr!!!!!!!!!' )
-                        e.preventDefault();
-                        return false;
-                    }, true);
 
             },
 
@@ -132,15 +151,15 @@ STP.app = function(){
                 $(document).ready( documentReadyHandler );
 
                 window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fsSuccessHandler, fsErrorHandler);
-                // Start sensor detection before starting activity.
+                // Defaults.
                 self.sensors['geoloc'].set( 'lat', 0 );
                 self.sensors['geoloc'].set( 'lon', 0 );
                 self.sensors['geoloc'].set( 'count', 0 );
-                geoLocateStart();
-
                 self.time.set( 'start', -1 );
                 self.time.set( 'last-record', -1 );
 
+                geoLocateStart();
+                accelerometerStart();
             },
 
             tickHandler = function() {
@@ -150,7 +169,7 @@ STP.app = function(){
                 var duration = self.time.get( 'duration' ),
                     lastRecord = self.time.get( 'last-record' );
 
-                // If record interval has elapsed since last record
+                // If recordInterval has elapsed since last record
                 // then record data/take picture.
                 if ( self.time.get( 'last-record') < 0 ||
                     duration-lastRecord  >= self.config.recordInterval ) {
@@ -162,10 +181,15 @@ STP.app = function(){
                     self.data.points.image.push( imagename );
 
                     // If camera is not busy take picture.
-                    if ( cameraBusy === false ) {
+                    if ( cameraReady === true && cameraBusy === false ) {
                         takePicture( imagename );
                     } else {
-                        cameraErrorHandler( 'Camera busy!' );
+                        if ( cameraReady === false ) {
+                            cameraErrorHandler( 'not ready' );
+                        } else {
+                            cameraErrorHandler( 'camera busy' );
+                        }
+
                     }
 
                     // Reset.
@@ -182,8 +206,8 @@ STP.app = function(){
 
                 var now = new Date();
                 self.time.set( 'now', Math.round( now.getTime()/1000 ) );
-                self.time.set( 'now-str', now.toUTCString() );
 
+                self.time.set( 'now-str', now.toUTCString() );
                 // Determine activity duration if its started.
                 if ( self.time.get('start') > 0) {
                     var duration = self.time.get( 'now' ) - self.time.get( 'start' );
@@ -213,6 +237,50 @@ STP.app = function(){
 
             },
 
+            accelerometerStart = function() {
+
+                previousReading = {
+                    x: null,
+                    y: null,
+                    z: null
+                };
+
+                var options = {};
+                options.frequency = 1000;
+                accelerationWatch = navigator.accelerometer.watchAcceleration(
+                        accelUpdateHandler, function(ex) {
+                            console.log("accel fail (" + ex.name + ": " + ex.message + ")");
+                        }, options);
+
+            },
+
+            accelUpdateHandler = function(a) {
+
+                var accel = self.sensors['accel'];
+                accel.set( 'x', a.x );
+                accel.set( 'y', a.y );
+                accel.set( 'z', a.z );
+                accel.set( 'combined', a.x+":"+a.y+":"+a.z );
+
+                var changes = {},
+                    bound = 0.5;
+                if (previousReading.x !== null) {
+                    changes.x = Math.abs(previousReading.x, a.x);
+                    changes.y = Math.abs(previousReading.y, a.y);
+                    changes.z = Math.abs(previousReading.z, a.z);
+                }
+                if (changes.x > bound && changes.y > bound && changes.z > bound) {
+                	accel.set( 'shake', true );
+                } else {
+                	accel.set( 'shake', false );
+                }
+                previousReading = {
+                    x: a.x,
+                    y: a.y,
+                    z: a.z
+                }
+            },
+
             takePicture = function( filename ) {
 
                 var params = [
@@ -222,8 +290,9 @@ STP.app = function(){
 
                 cameraBusy = true;
 
-                window.takePicture(params,
-                    function( fileName ) {
+                STP.plugins.takePicture(params,
+                    function( result ) {
+                        console.log( result.action +" (success)", result.filename );
                         cameraBusy = false;
                     }, cameraErrorHandler);
 
@@ -244,9 +313,9 @@ STP.app = function(){
                                 console.log(entries[i].name);
                                 if(entries[i].isDirectory) {
                                     var currId = parseInt( entries[i].name.replace(self.config.dirPrefix, '') );
-                                    console.log(entries[i].name.replace(self.config.dirPrefix, '') );
-                                    console.log( parseInt( entries[i].name.replace(self.config.dirPrefix, '')) );
-                                    console.log( currId );
+                                    // console.log(entries[i].name.replace(self.config.dirPrefix, '') );
+                                    // console.log( parseInt( entries[i].name.replace(self.config.dirPrefix, '')) );
+                                    // console.log( currId );
                                     if( currId > self.data.id ) {
                                         self.data.id = currId;
                                     }
@@ -255,6 +324,8 @@ STP.app = function(){
                             self.data.id++;
                             // Store parent to create dir later with activity id.
                             dataDirEntry = dirEntry;
+
+                            alert( "Please note down activity id: " + self.data.id );
 
                         }, fsErrorHandler );
 
@@ -287,7 +358,7 @@ STP.app = function(){
             },
 
             cameraErrorHandler = function( msg ) {
-                alert( 'Camera error' + msg );
+                alert( 'Camera error: ' + msg );
             },
             writeErrorHandler = function( msg ) {
                 alert( 'Write error:' + String(msg) );
@@ -343,11 +414,27 @@ STP.BindableModel = function( uid ) {
 /*
  * Plugins
  */
-window.takePicture = function(params, callbackSuccess, callbackError) {
+STP.plugins = STP.plugins || {};
+
+STP.plugins.prepareCamera = function(callbackSuccess, callbackError) {
+    cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "prepareCamera", []);
+};
+
+STP.plugins.takePicture = function(params, callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "takePicture", params);
 };
 
+STP.plugins.releaseCamera = function() {
+    cordova.exec(function(){
+            alert("stoppedSuccessfully");
+        }, function(){
+            alert("stoppedError");
+        }, "CameraAccessNoUserAction", "releaseCamera", []);
+};
 
+STP.plugins.switchCamera = function(callbackSuccess, callbackError) {
+    cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "switchCamera", []);
+};
 /*
  * Utilities - not project specific.
  */

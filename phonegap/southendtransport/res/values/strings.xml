@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">southendtransport</string>
+    <string name="hide_show_cam">Hide/Show Camera</string>
+    <string name="switch_cam">Switch Camera</string>
+    <string name="stop_activity">Stop Activity</string>
 </resources>
