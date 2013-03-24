@@ -20,12 +20,9 @@ STP.app = function(){
         };
 
         this.data = {
-            "title": "A track name",
             "id"    : 0,
-            "type" : "motherbuggy",
-            "author": "Your Name",
-            "start-time": "000",
-            "end-time": "000",
+            "description" : "",
+            "start-time": "",
             "device" : {
                 "name": "",
                 "cordova": "",
@@ -83,29 +80,43 @@ STP.app = function(){
             // Stop the ticking!!!!!!
             clearInterval( tickId );
 
-            // Write to file.
+			this.writeData(function( e ) {
+	                alert( 'Activity complete. Write successful.' );
+	            });
+            
+			STP.plugins.releaseCamera();
+			
+			$(".start").addClass("hide");
+			$(".exit").removeClass("hide");
+			
+        };
+        
+        this.exitApplication = function() {
+        	
+        	navigator.app.exitApp();
+        	
+        };
+        
+        this.writeData = function( successHandler ) {
+			
+			// Write to file.
             activityDataEntry.createWriter(function( writer ) {
 
-                    writer.onwrite = function( e ) {
-                        alert( 'Activity complete. Write successful.' );
-                    }
+                    writer.onwrite = successHandler;
                     writer.write( JSON.stringify( self.data ) );
 
                 }, writeErrorHandler );
-
-            // STP.plugins.releaseCamera();
-
+        
+        
         };
 
         this.startActivity = function() {
-
-            // Get activity time.
-            var activitytime = document.getElementById("activitytime");
 
             // Set start time.
             var now = new Date();
             self.time.set( 'start', Math.round( now.getTime()/1000 ) );
             self.time.set( 'start-str', now.toUTCString() );
+            self.data['start-time'] = self.time.get("start-str");
 
             var startTicking = function() { 
                 if( dataFileCreated === true && cameraReady === true ){
@@ -140,8 +151,19 @@ STP.app = function(){
             activityDirEntry = {}, // activity DirectoryEntry
             activityDataEntry = {}, // rawjson.json FileEntry
             previousReading = {},
+            mAccel = 0.00,
+            mAccelCurrent = 9.80665,
+            mAccelLast = 9.80665,
 
             documentReadyHandler = function() {
+
+				document.addEventListener("pause", function() {
+					console.log( "EVENT: PAUSE!");
+					}, false);
+					
+				document.addEventListener("RESUME", function() {
+					console.log( "EVENT: RESUME!");
+					}, false);
 
             },
 
@@ -151,6 +173,13 @@ STP.app = function(){
                 $(document).ready( documentReadyHandler );
 
                 window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fsSuccessHandler, fsErrorHandler);
+                
+                self.data.device.name = device.name;
+                self.data.device.platform = device.platform;
+    			self.data.device.version = device.version;
+    			self.data.device.uuid = device.uuid;
+    			self.data.description = document.getElementById("description").value;
+                
                 // Defaults.
                 self.sensors['geoloc'].set( 'lat', 0 );
                 self.sensors['geoloc'].set( 'lon', 0 );
@@ -179,7 +208,17 @@ STP.app = function(){
                     self.data.points.gps.push([ self.sensors['geoloc'].get( 'lat' ), self.sensors['geoloc'].get( 'lon' ) ]);
                     var imagename = self.time.get( 'now' ) + '.jpg';
                     self.data.points.image.push( imagename );
-
+                    var accel = self.sensors['accel'];
+                	self.data.points.accelerometer.push(accel.get( 'combined' ));
+                	self.data.points["shakeevent-yn"].push(accel.get( 'shake' ));
+                    
+					// Write data at every interval in case of crash, etc.
+					self.writeData(function() {
+							console.log( "Data written successfully" );
+						});
+					// Send back to server.
+					sendcurrentpos();
+						
                     // If camera is not busy take picture.
                     if ( cameraReady === true && cameraBusy === false ) {
                         takePicture( imagename );
@@ -239,12 +278,6 @@ STP.app = function(){
 
             accelerometerStart = function() {
 
-                previousReading = {
-                    x: null,
-                    y: null,
-                    z: null
-                };
-
                 var options = {};
                 options.frequency = 1000;
                 accelerationWatch = navigator.accelerometer.watchAcceleration(
@@ -262,24 +295,48 @@ STP.app = function(){
                 accel.set( 'z', a.z );
                 accel.set( 'combined', a.x+":"+a.y+":"+a.z );
 
-                var changes = {},
-                    bound = 0.5;
-                if (previousReading.x !== null) {
-                    changes.x = Math.abs(previousReading.x, a.x);
-                    changes.y = Math.abs(previousReading.y, a.y);
-                    changes.z = Math.abs(previousReading.z, a.z);
-                }
-                if (changes.x > bound && changes.y > bound && changes.z > bound) {
-                	accel.set( 'shake', true );
+                var delta = 0.00;
+                
+                mAccelLast = mAccelCurrent;
+      			mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
+      			delta = mAccelCurrent - mAccelLast;
+      			mAccel = mAccel * 0.9 + delta; // perform low-cut filter
+      
+      			if( mAccel > 1.75 ) { 
+                	accel.set( 'shake', "true" );
                 } else {
-                	accel.set( 'shake', false );
+                	accel.set( 'shake', "false" );
                 }
-                previousReading = {
-                    x: a.x,
-                    y: a.y,
-                    z: a.z
-                }
+                
             },
+            
+            
+			// Send current position to the server:
+			sendcurrentpos = function (){
+
+				var geoloc = self.sensors['geoloc'],                
+					posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",
+					lat = geoloc.get( "lat" ),
+					lng = geoloc.get( "lon" );
+					 
+			    $.ajax({
+			        url: posturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng,
+			        error: function(XMLHttpRequest, textStatus, errorThrown){
+			            ui.cpos.text('Current position: failed to send');
+			            geoloc.set( "message", "Failed to send" );
+			            setTimeout(function() {
+				            	geoloc.set( "message", "" );
+				            }, 2000);
+			        },
+			        success: function(data){
+			            geoloc.set( "message", "Geoloc sent successfully." );
+			            setTimeout(function() {
+				            	geoloc.set( "message", "" );
+				            }, 2000);
+			            console.log( "send successful" );
+			        }
+			    });
+			},
 
             takePicture = function( filename ) {
 
@@ -426,7 +483,7 @@ STP.plugins.takePicture = function(params, callbackSuccess, callbackError) {
 
 STP.plugins.releaseCamera = function() {
     cordova.exec(function(){
-            alert("stoppedSuccessfully");
+            console.log("stoppedSuccessfully");
         }, function(){
             alert("stoppedError");
         }, "CameraAccessNoUserAction", "releaseCamera", []);

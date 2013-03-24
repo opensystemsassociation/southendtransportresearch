@@ -154,31 +154,63 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 
 		if ("releaseCamera".equals(action)) {
 
-			activity = cordova.getActivity();
-			callbackContext = cbContext;
-			
-	        // Because the Camera object is a shared resource, it's very
-	        // important to release.
-	        if (mCamera != null) {
-	            // mPreview.setCamera(null);
-	            mCamera.release();
-	            // mCamera = null;
-	        }
-	        
-	        // Send result back to PhoneGap.
-	        JSONObject data = new JSONObject();
-	        data.put( "action", action );
-	        PluginResult result = new PluginResult(PluginResult.Status.OK, data);
-	        // Ensure callback stays active.
-	        result.setKeepCallback(true); 
-	        callbackContext.sendPluginResult(result);
-			
+			// Start UI thread in order to show preview.
+			cordova.getActivity().runOnUiThread(new Runnable() {
+				
+				public void run() {
+							
+			        // Because the Camera object is a shared resource, it's very
+			        // important to release.
+			        if (mCamera != null) {
+			        	mCamera.stopPreview();
+			        	mPreview.setVisibility(View.GONE);
+			            mPreview.setCamera(null);
+			            mCamera.release();
+			            mCamera = null;
+			        }
+			        
+			        // Send result back to PhoneGap.
+			        JSONObject data = new JSONObject();
+			        try {
+						data.put( "action", "releaseCamera");
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			        PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+			        // Ensure callback stays active.
+			        result.setKeepCallback(true); 
+			        callbackContext.sendPluginResult(result);
+			        
+				}
+			});
 	 	    return true;
 		}
 
 		return false;
 	}
-	 
+	
+	@Override
+	public void onPause(boolean multitasking) {
+		
+		Log.d(TAG, "Android EVENT: onPause");
+		
+    }
+	
+	@Override
+	public void onDestroy() {
+		
+		Log.d(TAG, "Android EVENT: onDestroy");
+		
+    }
+	
+	@Override
+	public void onResume(boolean multitasking) {
+		
+		Log.d(TAG, "Android EVENT: onResume");
+		
+    }
+	
 	private void takePicture() {
 
 		if (mCamera == null) {
@@ -191,8 +223,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 	
 	Camera.PictureCallback photoCallback = new Camera.PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera c) {
-			Log.d(TAG, String.valueOf(callbackContext == null));
-			Log.d(TAG, "Are we ins here intead? " + String.valueOf(data.length));
 			
 			new SavePhotoTask().execute(data);
 			mPreview.reset();
@@ -203,7 +233,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 		@Override
 		protected String doInBackground(byte[]... jpeg) {
 
-			Log.d(TAG, imageDirectory + "/" + imageName);
 			File photo = new File(imageDirectory, imageName);
 
 			// Create the storage directory if it does not exist
@@ -225,8 +254,6 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 				fos.write(jpeg[0]);
 				fos.close();
 
-				Log.d(TAG, "ISIT NULL? " + String.valueOf(callbackContext == null));
-				
 				// Send result back to PhoneGap.
 		        JSONObject resultData = new JSONObject();
 		        resultData.put( "action", "takePicture" ).put("filename", imageDirectory + "/" + imageName);
@@ -264,6 +291,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 	Size mPreviewSize;
 	List<Size> mSupportedPreviewSizes;
 	Camera mCamera;
+	Boolean mSurfaceCreated = false;
 	
 	CallbackContext callbackContext;
 	
@@ -359,7 +387,8 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 	}
 	
 	public void surfaceDestroyed(SurfaceHolder holder) {
-	   // Surface will be destroyed when we return, so stop the preview.
+		Log.d(TAG, "Android EVENT: surfaceDestroyed");
+		// Surface will be destroyed when we return, so stop the preview.
 	   if (mCamera != null) {
 	       // mCamera.stopPreview();
 	   }
@@ -407,25 +436,31 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 	public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
 	   // Now that the size is known, set up the camera parameters and begin
 	   // the preview.
-	   Camera.Parameters parameters = mCamera.getParameters();
-	   parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-	   requestLayout();
-	
-	   mCamera.setParameters(parameters);
-	   mCamera.startPreview();
-	   
-		// Send result back to PhoneGap.
-       JSONObject resultData = new JSONObject();
-       try {
-			resultData.put( "action", "prepareCamera" );
-		} catch (JSONException e) {
-			Log.e(TAG, "JSON Exception.");
+		
+		if( mSurfaceCreated == false ) {
+			Log.d( TAG, String.valueOf(w) + " x " + String.valueOf(h));
+		   Camera.Parameters parameters = mCamera.getParameters();
+		   parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
+		   requestLayout();
+		
+		   mCamera.setParameters(parameters);
+		   mCamera.startPreview();
+		   
+			// Send result back to PhoneGap.
+	       JSONObject resultData = new JSONObject();
+	       try {
+				resultData.put( "action", "prepareCamera" );
+			} catch (JSONException e) {
+				Log.e(TAG, "JSON Exception.");
+			}
+	       PluginResult result = new PluginResult(PluginResult.Status.OK, resultData);
+	       // Ensure callback stays active.
+	       result.setKeepCallback(true); 
+	       callbackContext.sendPluginResult(result);
+	       
+	       mSurfaceCreated = true;
 		}
-       PluginResult result = new PluginResult(PluginResult.Status.OK, resultData);
-       // Ensure callback stays active.
-       result.setKeepCallback(true); 
-       callbackContext.sendPluginResult(result);
-       
+	       
 	}
 
 }

@@ -130,9 +130,32 @@ h1 {
     text-align: left;
 }
 
-.start {
+.start, .exit {
     height: 40px;
     width: 90%;
     margin: 0 auto;
     font-size: 18px;
+}
+
+.start.hide {
+    display: none;
+}
+
+.exit.hide {
+    display: none;
+}
+
+.description {
+    
+    width: 90%;
+    margin: 0 auto;
+    height: 80px;
+}
+
+.message {
+    font-size: 12px;
+    position: absolute;
+    right: 0;
+    width: 30%;
+    text-align: right;
 }

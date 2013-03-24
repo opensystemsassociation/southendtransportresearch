@@ -24,6 +24,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import android.view.WindowManager;
+import android.view.Window;
+
 import org.apache.cordova.*;
 
 public class southendtransport extends DroidGap
@@ -33,6 +36,9 @@ public class southendtransport extends DroidGap
     {
         super.onCreate(savedInstanceState);
         // Set by <content src="index.html" /> in config.xml
+        
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         super.loadUrl(Config.getStartUrl());
         //super.loadUrl("file:///android_asset/www/index.html")
     }
