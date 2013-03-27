@@ -69,9 +69,9 @@ _The IOIO exmaples have been tested with_
 With the configeration above, the IOIO hello world example worked with the IOIO 0330 libraries.
 
 _Usefull links_  
-IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads
-IOIO Hardware tester: https://play.google.com/store/apps/details?id=ioio.example.ioiohardwaretester&hl=en
-Trouble shooting eclipse: https://github.com/ytai/ioio/wiki/Eclipse-Troubleshooting
+IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads  
+IOIO Hardware tester: https://play.google.com/store/apps/details?id=ioio.example.ioiohardwaretester&hl=en  
+Trouble shooting eclipse: https://github.com/ytai/ioio/wiki/Eclipse-Troubleshooting  
 
 
 
