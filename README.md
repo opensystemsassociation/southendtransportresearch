@@ -1,10 +1,10 @@
 southendtransport
 =================     
 A collection of scripts designed to collect transport data.
-=================     
+  
 
 DATA STRUCTURE
-
+=================   
     {
     	"track" : {
             "title": "A track name",
@@ -29,6 +29,7 @@ DATA STRUCTURE
     }
   
 FOLDER STRUCTURE
+=================   
 New tracks with associate files can be directly added to the folder structure.
 When a new track is uploaded to the server the following folder structure is generated 
 which the leaflet.js scripts generates visualisations from:
@@ -55,19 +56,21 @@ which the leaflet.js scripts generates visualisations from:
 
 
 INTEGRATION OF IOIO BOARD
+=========================
 Currently developing a phonagap plugin for the IOIO board. 
 
-The IOIO exmaples have been tested with:
+The IOIO exmaples have been tested with
+---------------------------------------
 - Android phone: The Samsung Gallaxy GT-19000
 - Android version: Android 2.3.6
 - IOIO hardware: SPRK0020
 - IOIO bootloader: IOIO0400
 - IOIO Firmware: IOIO0330
 - Connection: Socket(ADB)
-
 With the configeration above, the IOIO hello world example worked with the IOIO 0330 libraries.
 
-[Usefull links]
+Usefull links
+---------------
 IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads
 IOIO Hardware tester: https://play.google.com/store/apps/details?id=ioio.example.ioiohardwaretester&hl=en
 Trouble shooting eclipse: https://github.com/ytai/ioio/wiki/Eclipse-Troubleshooting
