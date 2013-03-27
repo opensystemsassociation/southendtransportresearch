@@ -59,7 +59,7 @@ Integration of ioio board
 -------------------------
 Currently developing a phonagap plugin for the IOIO board. 
 
-*The IOIO exmaples have been tested with*
+_The IOIO exmaples have been tested with_  
 - Android phone: The Samsung Gallaxy GT-19000
 - Android version: Android 2.3.6
 - IOIO hardware: SPRK0020
@@ -68,7 +68,7 @@ Currently developing a phonagap plugin for the IOIO board.
 - Connection: Socket(ADB)
 With the configeration above, the IOIO hello world example worked with the IOIO 0330 libraries.
 
-*Usefull links*
+_Usefull links_  
 IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads
 IOIO Hardware tester: https://play.google.com/store/apps/details?id=ioio.example.ioiohardwaretester&hl=en
 Trouble shooting eclipse: https://github.com/ytai/ioio/wiki/Eclipse-Troubleshooting
