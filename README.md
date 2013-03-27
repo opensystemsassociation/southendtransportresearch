@@ -1,4 +1,4 @@
-southendtransport
+Southend Transport
 =================     
 A collection of scripts designed to collect transport data.
   
