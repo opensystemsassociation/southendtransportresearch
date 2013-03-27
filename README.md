@@ -25,7 +25,7 @@ DATA STRUCTURE
                   "accelerometer" 	: [ [x,y,z], [x,y,z], 0, [x-y-z] ],
                   "shakeevent" 	: [0,1,0,0]
             }
-		}
+	}
     }
   
 FOLDER STRUCTURE
@@ -33,6 +33,7 @@ FOLDER STRUCTURE
 New tracks with associate files can be directly added to the folder structure.
 When a new track is uploaded to the server the following folder structure is generated 
 which the leaflet.js scripts generates visualisations from:
+
     tracks
     	device.uuid
     		tracktitle1
@@ -53,7 +54,7 @@ which the leaflet.js scripts generates visualisations from:
     		tracktitle2
     		    	rawjson.json
     			imagefile1.jpg
-
+    
 
 INTEGRATION OF IOIO BOARD
 =========================
