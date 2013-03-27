@@ -52,7 +52,7 @@ which the leaflet.js scripts generates visualisations from:
     		tracktitle1
     			rawjson.json
     		tracktitle2
-    		    	rawjson.json
+    		        rawjson.json
     			imagefile1.jpg
     
 
