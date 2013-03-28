@@ -56,8 +56,8 @@
     <plugin name="Globalization" value="org.apache.cordova.Globalization"/>
     <plugin name="InAppBrowser" value="org.apache.cordova.InAppBrowser"/>
     <plugin name="Echo" value="uk.org.opensystem.plugin.Echo"/>
-	<plugin name="CameraAccessNoUserAction" value="uk.org.opensystem.plugin.CameraAccessNoUserAction"/>
-
+	  <plugin name="CameraAccessNoUserAction" value="uk.org.opensystem.plugin.CameraAccessNoUserAction"/>
+    <plugin name="IOIO" value="uk.org.opensystem.plugin.IOIO"/>
 </plugins>
 </cordova>
 

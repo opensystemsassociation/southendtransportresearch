@@ -66,7 +66,8 @@ STP.app = function(){
         this.image = STP.BindableModel( 'image' );
         this.sensors = {
             'geoloc'    : new STP.BindableModel( 'geoloc' ),
-            'accel'     : new STP.BindableModel( 'accel' )
+            'accel'     : new STP.BindableModel( 'accel' ),
+            'ioio'     : new STP.BindableModel( 'ioio')
         };
 
         this.switchCamera = function() {
@@ -184,11 +185,14 @@ STP.app = function(){
                 self.sensors['geoloc'].set( 'lat', 0 );
                 self.sensors['geoloc'].set( 'lon', 0 );
                 self.sensors['geoloc'].set( 'count', 0 );
+                self.sensors['ioio'].set( 'ioio-str', 0 );
                 self.time.set( 'start', -1 );
                 self.time.set( 'last-record', -1 );
 
+                // Start asynchronos sensor polling
                 geoLocateStart();
                 accelerometerStart();
+                ioioStart();
             },
 
             tickHandler = function() {
@@ -213,12 +217,11 @@ STP.app = function(){
                 	self.data.points["shakeevent-yn"].push(accel.get( 'shake' ));
                     
 					// Write data at every interval in case of crash, etc.
-					self.writeData(function() {
-							console.log( "Data written successfully" );
-						});
-					// Send back to server.
+					self.writeData(function() { console.log( "Data written successfully" ); });
+					
+                    // Send current position back to server.
 					sendcurrentpos();
-						
+
                     // If camera is not busy take picture.
                     if ( cameraReady === true && cameraBusy === false ) {
                         takePicture( imagename );
@@ -256,35 +259,27 @@ STP.app = function(){
             },
 
             geoLocateStart = function() {
-
                 watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
-
             },
 
             geoLocateStop = function() {
-
                 navigator.geolocation.clearWatch(watchID);
-
             },
 
             geoSuccessHandler = function( position ) {
-
                 var geoloc = self.sensors['geoloc'];
                 geoloc.set( 'lat', position.coords.latitude );
                 geoloc.set( 'lon', position.coords.longitude );
                 geoloc.set( 'count', geoloc.get('count')+1 );
-
             },
 
             accelerometerStart = function() {
-
                 var options = {};
                 options.frequency = 1000;
                 accelerationWatch = navigator.accelerometer.watchAcceleration(
                         accelUpdateHandler, function(ex) {
                             console.log("accel fail (" + ex.name + ": " + ex.message + ")");
                         }, options);
-
             },
 
             accelUpdateHandler = function(a) {
@@ -355,6 +350,28 @@ STP.app = function(){
 
             },
 
+            // IOIO: Start communications with the IOIO board
+            ioioStart = function() {
+                var interval = 1000;
+                var ioioInterval = window.setInterval(ioioUpdate, interval);
+                ioioUpdate();
+            },
+
+            // IOIO: Grab data from the ioio board if its available
+            ioioUpdate = function(){
+                var params = ["Sent from .js!!"];
+                STP.plugins.ioioIsAlive(params,
+                    function(result) {
+                        self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
+                        //console.log("IOIO Sucess: "+result);
+                    }, 
+                    function(err){
+                        console.log("IOIO Error: "+err);
+                    }
+                );
+            },
+
+            // File system
             fsSuccessHandler = function( fileSystem ) {
 
                 // Determine next ID based on existing directories.
@@ -492,6 +509,37 @@ STP.plugins.releaseCamera = function() {
 STP.plugins.switchCamera = function(callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "switchCamera", []);
 };
+
+/* Functions for the IOIO plugin. 
+ * Check the following is added to "res/xml/config": 
+ *  <plugin name="IOIO" value="uk.org.opensystem.plugin.IOI
+
+STP.plugins.ioioIsAlive = function(params) {
+    cordova.exec(
+        function(result) {
+            console.log("IOIO Success: "+result);
+        }, 
+        function(err) {
+            console.log("IOIO Error: "+Err);
+        }, 
+        "IOIO", // Refernaces java file: IOIO.java
+        "ioioIsAlive", // Action to perform
+        params
+    );
+};
+*/
+
+STP.plugins.ioioIsAlive = function(params, callbackSuccess, callbackError) {
+    cordova.exec(
+        callbackSuccess, 
+        callbackError, 
+        "IOIO", // Refernaces java file: IOIO.java
+        "ioioIsAlive", // Action to perform
+        params
+    );
+};
+
+
 /*
  * Utilities - not project specific.
  */
@@ -515,7 +563,6 @@ UTIL.DataBinder = function( object_id ) {
         var $input = jQuery( this );
 
         pubSub.trigger( message, [ $input.data( data_attr ), $input.val() ] );
-
     });
     // PubSub propagates changes to all bound elements, setting value of
     // input tags or HTML content of other tags

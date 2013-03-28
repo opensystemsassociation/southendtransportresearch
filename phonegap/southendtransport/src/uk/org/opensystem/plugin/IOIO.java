@@ -11,12 +11,12 @@ import android.util.Log;
 /**
  * This class echoes a string called from JavaScript.
  */
-public class Echo extends CordovaPlugin {
+public class IOIO extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        if (action.equals("echo")) {
-            String message = args.getString(0); 
-            this.echo(message, callbackContext);
+        if (action.equals("ioioIsAlive")) {
+            String message = "From java. ["+args.getString(0)+"]"; 
+            this.echo(message, callbackContext); 
             return true;
         }
         return false;
@@ -26,7 +26,7 @@ public class Echo extends CordovaPlugin {
         if (message != null && message.length() > 0) { 
             callbackContext.success(message);
         } else {
-            callbackContext.error("Expected one non-empty string argument.");
+            callbackContext.error("IOIO.java Expected one non-empty string argument.");
         }
     }
 }

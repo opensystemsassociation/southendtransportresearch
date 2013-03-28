@@ -29,11 +29,6 @@ var deviceInfo = function() {
     */
     // getLocation();
     // toggleAccel();
-    /*
-    window.echo("echome", function(echoValue) {
-            alert(echoValue); // echo string passed back from Java.
-    });
-    */
     var pictureTakenHandler = function() {
         window.takePicture(function(message) {
             alert(message); // Success message...hopefully.
