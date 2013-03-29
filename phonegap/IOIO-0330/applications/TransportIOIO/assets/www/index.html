@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <title>Hello World</title>
+    </head>
+    <body>
+        <div class="app">
+        	<div class="message" data-bind-geoloc="message">Sent to server?</div>
+            <dl>
+                <dt class="label">IOIO</dt>
+                <dd id="ioio" data-bind-ioio="ioio-str">??</dd>
+                <hr />
+                <dt class="label">Now</dt>
+                <dd class="time" data-bind-time="now-str">??</dd>
+                <dt class="label">Start</dt>
+                <dd class="time" data-bind-time="start-str">??</dd>
+                <dt class="label">Duration</dt>
+                <dd class="time" data-bind-time="duration">??</dd>
+                <hr/>
+                <dt class="label">Lat</dt>
+                <dd class="location" data-bind-geoloc="lat">??</dd>
+                <dt class="label">Long</dt>
+                <dd class="location" data-bind-geoloc="lon">??</dd>
+                <dt class="label">GeoCount</dt>
+                <dd class="location" data-bind-geoloc="count">??</dd>
+                <hr/>
+                <dt class="label">Accel</dt>
+                <dd id="accel" data-bind-accel="combined">??</dd>
+                <dt class="label">Shake</dt>
+                <dd id="shake" data-bind-accel="shake">??</dd>
+            </dl>
+            <hr/>
+            <textarea class="description" id="description" placeholder="Add a description of the journey"></textarea>
+            <button class="start" onclick="stp.startActivity();">Start</button>
+            <button class="exit hide" onclick="stp.exitApplication();">Exit</button>
+        </div>
+        <script type="text/javascript" src="cordova-2.5.0.js"></script>
+        <script type="text/javascript" src="js/lib/jquery/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript">
+            var stp = STP.app();
+            stp.initialise();
+        </script>
+    </body>
+</html>

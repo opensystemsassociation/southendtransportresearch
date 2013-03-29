@@ -10,4 +10,5 @@ int string app_name 0x7f050000
 int string hide_show_cam 0x7f050001
 int string stop_activity 0x7f050003
 int string switch_cam 0x7f050002
-int xml config 0x7f040000
+int xml accessory_filter 0x7f040000
+int xml config 0x7f040001
