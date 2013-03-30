@@ -28,21 +28,26 @@ import android.view.WindowManager;
 import android.view.Window;
 
 import org.apache.cordova.*;
+import android.content.Intent;
 
-public class southendtransport extends DroidGap
+
+public class southendtransport extends DroidGap 
 {
+    
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        // Set by <content src="index.html" /> in config.xml
-        
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        // Set by <content src="index.html" /> in config.xml
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.loadUrl(Config.getStartUrl());
         //super.loadUrl("file:///android_asset/www/index.html")
+        startService(new Intent(this, HelloIOIOService.class));
+
     }
     
+    // Camera Control
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.camera_menu, menu);
@@ -65,5 +70,6 @@ public class southendtransport extends DroidGap
             return super.onOptionsItemSelected(item);
         }
     }
+
 }
 

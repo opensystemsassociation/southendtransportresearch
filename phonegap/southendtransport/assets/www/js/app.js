@@ -527,6 +527,7 @@ STP.plugins.switchCamera = function(callbackSuccess, callbackError) {
 /* Functions for the IOIO plugin. 
  * Check the following is added to "res/xml/config": 
  *    <plugin name="IOIO" value="uk.org.opensystem.plugin.IOIOconnect"/>
+ * And that a file exists called  at src/org/opensystem/plugin/IOIOconnect.java
  */
 STP.plugins.ioioIsAlive = function(params, callbackSuccess, callbackError) {
     cordova.exec(

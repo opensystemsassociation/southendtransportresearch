@@ -93,5 +93,10 @@ public class IOIOconnect extends CordovaPlugin {
         String message = "Startup";
         callbackContext.success(message);
     }
+
+    /* ==============================================================================
+     * IOIO ADDITIONS
+     * ==============================================================================
+     */
     
 }
