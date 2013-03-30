@@ -35,7 +35,7 @@
     <log level="DEBUG"/>
     <preference name="useBrowserHistory" value="true" />
     <preference name="exit-on-suspend" value="false" />
-<plugins>
+  <plugins>
     <plugin name="App" value="org.apache.cordova.App"/>
     <plugin name="Geolocation" value="org.apache.cordova.GeoBroker"/>
     <plugin name="Device" value="org.apache.cordova.Device"/>
@@ -56,8 +56,8 @@
     <plugin name="Globalization" value="org.apache.cordova.Globalization"/>
     <plugin name="InAppBrowser" value="org.apache.cordova.InAppBrowser"/>
     <plugin name="Echo" value="uk.org.opensystem.plugin.Echo"/>
-	<plugin name="CameraAccessNoUserAction" value="uk.org.opensystem.plugin.CameraAccessNoUserAction"/>
-
-</plugins>
+	  <plugin name="CameraAccessNoUserAction" value="uk.org.opensystem.plugin.CameraAccessNoUserAction"/>
+    <plugin name="IOIOconnect" value="uk.org.opensystem.plugin.IOIOconnect"/>  
+  </plugins>
 </cordova>
 

@@ -66,7 +66,8 @@ STP.app = function(){
         this.image = STP.BindableModel( 'image' );
         this.sensors = {
             'geoloc'    : new STP.BindableModel( 'geoloc' ),
-            'accel'     : new STP.BindableModel( 'accel' )
+            'accel'     : new STP.BindableModel( 'accel' ),
+            'ioio'     : new STP.BindableModel( 'ioio')
         };
 
         this.switchCamera = function() {
@@ -80,26 +81,26 @@ STP.app = function(){
             // Stop the ticking!!!!!!
             clearInterval( tickId );
 
-			this.writeData(function( e ) {
-	                alert( 'Activity complete. Write successful.' );
-	            });
+            this.writeData(function( e ) {
+                    alert( 'Activity complete. Write successful.' );
+                });
             
-			STP.plugins.releaseCamera();
-			
-			$(".start").addClass("hide");
-			$(".exit").removeClass("hide");
-			
+            STP.plugins.releaseCamera();
+
+            $(".start").addClass("hide");
+            $(".exit").removeClass("hide");
+
         };
         
         this.exitApplication = function() {
-        	
-        	navigator.app.exitApp();
-        	
+            
+            navigator.app.exitApp();
+            
         };
         
         this.writeData = function( successHandler ) {
-			
-			// Write to file.
+
+            // Write to file.
             activityDataEntry.createWriter(function( writer ) {
 
                     writer.onwrite = successHandler;
@@ -157,13 +158,13 @@ STP.app = function(){
 
             documentReadyHandler = function() {
 
-				document.addEventListener("pause", function() {
-					console.log( "EVENT: PAUSE!");
-					}, false);
-					
-				document.addEventListener("RESUME", function() {
-					console.log( "EVENT: RESUME!");
-					}, false);
+                document.addEventListener("pause", function() {
+                    console.log( "EVENT: PAUSE!");
+                    }, false);
+
+                document.addEventListener("RESUME", function() {
+                    console.log( "EVENT: RESUME!");
+                    }, false);
 
             },
 
@@ -176,19 +177,22 @@ STP.app = function(){
                 
                 self.data.device.name = device.name;
                 self.data.device.platform = device.platform;
-    			self.data.device.version = device.version;
-    			self.data.device.uuid = device.uuid;
-    			self.data.description = document.getElementById("description").value;
+                self.data.device.version = device.version;
+                self.data.device.uuid = device.uuid;
+                self.data.description = document.getElementById("description").value;
                 
                 // Defaults.
                 self.sensors['geoloc'].set( 'lat', 0 );
                 self.sensors['geoloc'].set( 'lon', 0 );
                 self.sensors['geoloc'].set( 'count', 0 );
+                self.sensors['ioio'].set( 'ioio-str', 0 );
                 self.time.set( 'start', -1 );
                 self.time.set( 'last-record', -1 );
 
+                // Start asynchronos sensor polling
                 geoLocateStart();
                 accelerometerStart();
+                ioioStart();
             },
 
             tickHandler = function() {
@@ -209,16 +213,15 @@ STP.app = function(){
                     var imagename = self.time.get( 'now' ) + '.jpg';
                     self.data.points.image.push( imagename );
                     var accel = self.sensors['accel'];
-                	self.data.points.accelerometer.push(accel.get( 'combined' ));
-                	self.data.points["shakeevent-yn"].push(accel.get( 'shake' ));
+                    self.data.points.accelerometer.push(accel.get( 'combined' ));
+                    self.data.points["shakeevent-yn"].push(accel.get( 'shake' ));
                     
-					// Write data at every interval in case of crash, etc.
-					self.writeData(function() {
-							console.log( "Data written successfully" );
-						});
-					// Send back to server.
-					sendcurrentpos();
-						
+                    // Write data at every interval in case of crash, etc.
+                    self.writeData(function() { console.log( "Data written successfully" ); });
+
+                    // Send current position back to server.
+                    sendcurrentpos();
+
                     // If camera is not busy take picture.
                     if ( cameraReady === true && cameraBusy === false ) {
                         takePicture( imagename );
@@ -256,35 +259,27 @@ STP.app = function(){
             },
 
             geoLocateStart = function() {
-
                 watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
-
             },
 
             geoLocateStop = function() {
-
                 navigator.geolocation.clearWatch(watchID);
-
             },
 
             geoSuccessHandler = function( position ) {
-
                 var geoloc = self.sensors['geoloc'];
                 geoloc.set( 'lat', position.coords.latitude );
                 geoloc.set( 'lon', position.coords.longitude );
                 geoloc.set( 'count', geoloc.get('count')+1 );
-
             },
 
             accelerometerStart = function() {
-
                 var options = {};
                 options.frequency = 1000;
                 accelerationWatch = navigator.accelerometer.watchAcceleration(
                         accelUpdateHandler, function(ex) {
                             console.log("accel fail (" + ex.name + ": " + ex.message + ")");
                         }, options);
-
             },
 
             accelUpdateHandler = function(a) {
@@ -298,45 +293,45 @@ STP.app = function(){
                 var delta = 0.00;
                 
                 mAccelLast = mAccelCurrent;
-      			mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
-      			delta = mAccelCurrent - mAccelLast;
-      			mAccel = mAccel * 0.9 + delta; // perform low-cut filter
+                mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
+                delta = mAccelCurrent - mAccelLast;
+                mAccel = mAccel * 0.9 + delta; // perform low-cut filter
       
-      			if( mAccel > 1.75 ) { 
-                	accel.set( 'shake', "true" );
+                if( mAccel > 1.75 ) { 
+                    accel.set( 'shake', "true" );
                 } else {
-                	accel.set( 'shake', "false" );
+                    accel.set( 'shake', "false" );
                 }
                 
             },
             
             
-			// Send current position to the server:
-			sendcurrentpos = function (){
+            // Send current position to the server:
+            sendcurrentpos = function (){
 
-				var geoloc = self.sensors['geoloc'],                
-					posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",
-					lat = geoloc.get( "lat" ),
-					lng = geoloc.get( "lon" );
-					 
-			    $.ajax({
-			        url: posturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng,
-			        error: function(XMLHttpRequest, textStatus, errorThrown){
-			            ui.cpos.text('Current position: failed to send');
-			            geoloc.set( "message", "Failed to send" );
-			            setTimeout(function() {
-				            	geoloc.set( "message", "" );
-				            }, 2000);
-			        },
-			        success: function(data){
-			            geoloc.set( "message", "Geoloc sent successfully." );
-			            setTimeout(function() {
-				            	geoloc.set( "message", "" );
-				            }, 2000);
-			            console.log( "send successful" );
-			        }
-			    });
-			},
+                var geoloc = self.sensors['geoloc'],                
+                    posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",
+                    lat = geoloc.get( "lat" ),
+                    lng = geoloc.get( "lon" );
+
+                $.ajax({
+                    url: posturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng,
+                    error: function(XMLHttpRequest, textStatus, errorThrown){
+                        ui.cpos.text('Current position: failed to send');
+                        geoloc.set( "message", "Failed to send" );
+                        setTimeout(function() {
+                                geoloc.set( "message", "" );
+                            }, 2000);
+                    },
+                    success: function(data){
+                        geoloc.set( "message", "Geoloc sent successfully." );
+                        setTimeout(function() {
+                                geoloc.set( "message", "" );
+                            }, 2000);
+                        console.log( "send successful" );
+                    }
+                });
+            },
 
             takePicture = function( filename ) {
 
@@ -355,6 +350,42 @@ STP.app = function(){
 
             },
 
+            // IOIO: Start communications with the IOIO board
+            ioioStart = function() {
+                var interval = 1000;
+                var ioioInterval = window.setInterval(ioioUpdate, interval);
+                ioioStartup();
+            },
+
+            // IOIO: Startup the main IOIO thread
+            ioioStartup = function(){
+                var params = [];
+                STP.plugins.ioioStartup(params,
+                    function(result) {
+                        self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
+                        //console.log("IOIO Sucess: "+result);
+                    }, 
+                    function(err){
+                        console.log("IOIO Error: "+err);
+                    }
+                );
+            },
+
+            // IOIO: Grab data from the ioio board if its available
+            ioioUpdate = function(){
+                var params = ["Sent from .js!!"];
+                STP.plugins.ioioIsAlive(params,
+                    function(result) {
+                        self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
+                        //console.log("IOIO Sucess: "+result);
+                    }, 
+                    function(err){
+                        console.log("IOIO Error: "+err);
+                    }
+                );
+            },
+
+            // File system
             fsSuccessHandler = function( fileSystem ) {
 
                 // Determine next ID based on existing directories.
@@ -492,6 +523,31 @@ STP.plugins.releaseCamera = function() {
 STP.plugins.switchCamera = function(callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "switchCamera", []);
 };
+
+/* Functions for the IOIO plugin. 
+ * Check the following is added to "res/xml/config": 
+ *    <plugin name="IOIO" value="uk.org.opensystem.plugin.IOIOconnect"/>
+ */
+STP.plugins.ioioIsAlive = function(params, callbackSuccess, callbackError) {
+    cordova.exec(
+        callbackSuccess, 
+        callbackError, 
+        "IOIOconnect", // References java file: IOIOconnect.java
+        "ioioIsAlive", // Action to perform
+        params
+    );
+};
+STP.plugins.ioioStartup = function(params, callbackSuccess, callbackError) {
+    cordova.exec(
+        callbackSuccess, 
+        callbackError, 
+        "IOIOconnect", // Refereneces java file: IOIOconnect.java
+        "ioioStartup", // Action to perform
+        params
+    );
+};
+
+
 /*
  * Utilities - not project specific.
  */
@@ -515,7 +571,6 @@ UTIL.DataBinder = function( object_id ) {
         var $input = jQuery( this );
 
         pubSub.trigger( message, [ $input.data( data_attr ), $input.val() ] );
-
     });
     // PubSub propagates changes to all bound elements, setting value of
     // input tags or HTML content of other tags
