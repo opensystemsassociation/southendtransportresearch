@@ -45,27 +45,30 @@ public class HelloIOIOService extends IOIOService {
 	private int counter = 0;
 	Context thiscontext;
 	
+	public int getextra(){
+		return 44;
+	}
 	// MANAGE MESSAGING
 	// This is the object that receives interactions from clients.  See
     // RemoteService for a more complete example.
     //private final IBinder mBinder = new LocalBinder();
-    public class LocalBinder extends Binder {
-    	//HelloIOIOService getService() {
-          //  return HelloIOIOService.this;
-        //}
-    	return null;
-    }
+    //public class LocalBinder extends Binder {
+    //	HelloIOIOService getService() {
+    //        return HelloIOIOService.this;
+    //    }
+    //}
     @Override
     public IBinder onBind(Intent intent) {
-    	Log.d("helloIOIOService.java", "IOIO bound service");
-        return mBinder;
+    	//Log.d("helloIOIOService.java", "IOIO bound service");
+        //return mBinder;
+        return null;
     }
 	
     // USUAL IOIO SERVICE STUFF
 	@Override
 	public void onStart(Intent intent, int startId) {  
 		 
-		//thiscontext = getApplicationContext();
+		thiscontext = getApplicationContext();
 		
 		// Service has been started
 		super.onStart(intent, startId);
