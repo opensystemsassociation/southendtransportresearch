@@ -1,10 +1,14 @@
 package uk.org.opensystem.plugin;
+
 import org.apache.cordova.api.CallbackContext;
 import org.apache.cordova.api.CordovaPlugin;
 import org.apache.cordova.api.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import uk.org.opensystem.HelloIOIOService;
+
 
 import ioio.lib.api.AnalogInput;
 import ioio.lib.api.DigitalOutput;
@@ -20,43 +24,49 @@ import android.view.View;
 import android.util.Log;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.Context;
 
+import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.app.Service;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.os.Binder;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.Toast;
+import android.os.Handler;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.content.Intent;
+import android.content.IntentFilter;
 
 /**
  * This class manages a connection with the ioio board
  */
 public class IOIOconnect extends CordovaPlugin {
-//public class IOIOconnect extends CordovaPlugin {
-
-    // An IOIO object used to manage IOIO communications
-    //public IOIOmanager ioioObj = new IOIOmanager(false);
-    //public MainActivity ioioObj = new MainActivity();
-
-    //public Intent intent = new Intent(this, MainActivity.class);
-    //public MyActivity myAct = (MyActivity)this.cordova.getActivity();
-    //public Context context = this.cordova.getActivity().getApplicationContext();
-    //public IOIOmanager ioioObj = new IOIOmanager();
-    //this.cordova.getActivity().startActivity() 
-    //context.startActivity(IOIOmanager);
-
-    /* =======================================================
-     * HANDLE JAVASCRIPT CALLS
-     * =======================================================
-     */
+	private Context thiscontext;
+	private Intent ioioService;
+  
+    
+    // Handle calls from Javascript
     //@SuppressLint("NewApi")
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        // Call from javascript to initialise
+        // Call from javascript to startup the IOIO service
         if (action.equals("ioioStartup")) {
             this.ioioStartup(callbackContext); 
-            //cordova.getActivity().runOnUiThread(new Runnable() { 
-            //    public void run() {                    
-            //        activity = cordova.getActivity();
-            //    }
-            //}
             return true;
         }
-        // Call form javascript to grab current variables
+        // Call from javascript to stop the IOIO service
+        if (action.equals("ioioStop")) {
+            this.ioioStartup(callbackContext); 
+            return true;
+        }
+        // Call from javascript to grab current variables
         if (action.equals("ioioIsAlive")) {
             this.ioioIsAlive(args.getString(0), callbackContext); 
             return true;
@@ -64,9 +74,40 @@ public class IOIOconnect extends CordovaPlugin {
         return false;
     }
 
+    
+    // Initialise IOIO service (Called from Javascript)
+    private void ioioStartup(CallbackContext callbackContext) {
+    	// Initialise the service variables and start it it up
+    	thiscontext = this.cordova.getActivity().getApplicationContext();
+    	ioioService = new Intent(thiscontext, HelloIOIOService.class);
+        ioioService.putExtra("loadinterval", 800); // Set LED flash interval
+        thiscontext.startService(ioioService);
+        
+        
+        //bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        
+        // Send a message back to the Javascript call
+        Log.d("helloIOIOService.java", "IOIO Started from the plugin"); 
+        callbackContext.success("Started IOIO service");
+    }
+
+    // Stop IOIO service (Called from Javascript)
+    private void ioioStop(CallbackContext callbackContext) {
+    	// Grab context and start the service
+        thiscontext.stopService(ioioService);
+        Log.d("helloIOIOService.java", "IOIO Stopped from the plugin"); 
+        // Send a message back to the Javascript call
+        callbackContext.success("Stopped IOIO service");
+    }
+    
     // Echo strings back to javascript
     private void ioioIsAlive(String msg, CallbackContext callbackContext) {
         //String message = "Led: "+ioioObj.onoff+" Status: "+ioioObj.status;
+    	//Context thiscontext = this.cordova.getActivity().getApplicationContext();
+    	//Intent ioioService = new Intent(thiscontext, HelloIOIOService.class);
+    	
+    	//bindService(new Intent(Binding.this,  HelloIOIOService.class), mConnection, Context.BIND_AUTO_CREATE);
+    	
         String message = "Alive";
         ioioSwitchOnoff();
         if (message != null && message.length() > 0) { 
@@ -87,16 +128,12 @@ public class IOIOconnect extends CordovaPlugin {
         */
     }
 
-    // Initialise IOIO
-    private void ioioStartup(CallbackContext callbackContext) {
-        //String message = "onoff: "+ioioObj.onoff+" Status: "+ioioObj.status;
-        String message = "Startup";
-        callbackContext.success(message);
-    }
-
     /* ==============================================================================
-     * IOIO ADDITIONS
+     * IOIO MESSAGING
      * ==============================================================================
      */
     
+
+    
+  
 }
