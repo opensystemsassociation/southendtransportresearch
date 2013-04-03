@@ -35,24 +35,24 @@ which the leaflet.js scripts generates visualisations from:
 
     tracks
     	device.uuid
-    		tracktitle1
-    			rawjson.json
-    			imagefile1.jpg
-    			imagefile2.jpg
-    		tracktitle2
-    		    	rawjson.json
-    			imagefile1.jpg
-    			imagefile2.jpg
-    			imagefile3.jpg
-    		tracktitle3
-    		    	rawjson.json
-    			imagefile1.jpg
+    		yyyy-mm-dd_h-m-s
+    			data.json
+    			timestamp.jpg
+    			timestamp2.jpg
+    		2013-2-21_23-26-2
+    		    	data.json
+    			timestamp1.jpg
+    			timestamp2.jpg
+    			timestamp3.jpg
+    		2013-2-21_23-26-5
+    		    	data.json
+    			timestamp1.jpg
     	device.uuid
-    		tracktitle1
-    			rawjson.json
-    		tracktitle2
-    		        rawjson.json
-    			imagefile1.jpg
+    		2013-2-21_23-26-5
+    			data.json
+    		2013-2-21_23-26-34
+    		        data.json
+    			timestamp1.jpg
     
 
 Integration of ioio board
@@ -73,6 +73,7 @@ With the configeration above, the IOIO hello world example worked with the IOIO 
 IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads  
 IOIO Hardware tester: https://play.google.com/store/apps/details?id=ioio.example.ioiohardwaretester&hl=en  
 Trouble shooting eclipse: https://github.com/ytai/ioio/wiki/Eclipse-Troubleshooting  
+Local messaging in an android app: http://www.intertech.com/Blog/Post/Using-LocalBroadcastManager-in-Service-to-Activity-Communications.as
 
 
 
