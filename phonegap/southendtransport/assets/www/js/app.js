@@ -22,7 +22,7 @@ STP.app = function(){
         this.data = {
             "id"    : 0,
             "description" : "",
-            "start-time": "",
+            "starttime": "",
             "device" : {
                 "name": "",
                 "cordova": "",
@@ -35,7 +35,7 @@ STP.app = function(){
                   "gps"             : [],
                   "image"           : [],
                   "accelerometer"   : [],
-                  "shakeevent-yn"   : [],
+                  "shakeeventyn"   : [],
             }
         };
 
@@ -69,6 +69,10 @@ STP.app = function(){
             'accel'     : new STP.BindableModel( 'accel' ),
             'ioio'     : new STP.BindableModel( 'ioio')
         };
+        this.appstate = {
+            'uploadedcnt'    : new STP.BindableModel( 'uploadedcnt' ),
+            'deviceid'    : new STP.BindableModel( 'deviceid' )
+        };
 
         this.switchCamera = function() {
 
@@ -77,29 +81,22 @@ STP.app = function(){
         },
 
         this.stopActivity = function() {
-
             // Stop the ticking!!!!!!
             clearInterval( tickId );
-
             this.writeData(function( e ) {
                     alert( 'Activity complete. Write successful.' );
                 });
-            
             STP.plugins.releaseCamera();
 
             $(".start").addClass("hide");
             $(".exit").removeClass("hide");
-
         };
         
         this.exitApplication = function() {
-            
-            navigator.app.exitApp();
-            
+            navigator.app.exitApp(); 
         };
         
         this.writeData = function( successHandler ) {
-
             // Write to file.
             activityDataEntry.createWriter(function( writer ) {
 
@@ -107,8 +104,6 @@ STP.app = function(){
                     writer.write( JSON.stringify( self.data ) );
 
                 }, writeErrorHandler );
-        
-        
         };
 
         this.startActivity = function() {
@@ -117,7 +112,7 @@ STP.app = function(){
             var now = new Date();
             self.time.set( 'start', Math.round( now.getTime()/1000 ) );
             self.time.set( 'start-str', now.toUTCString() );
-            self.data['start-time'] = self.time.get("start-str");
+            self.data['starttime'] = self.time.get("start-str");
 
             var startTicking = function() { 
                 if( dataFileCreated === true && cameraReady === true ){
@@ -155,6 +150,8 @@ STP.app = function(){
             mAccel = 0.00,
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
+            uploadedcnt = 0, 
+            posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",  
 
             documentReadyHandler = function() {
 
@@ -188,10 +185,23 @@ STP.app = function(){
                 self.sensors['ioio'].set( 'ioio-str', 0 );
                 self.time.set( 'start', -1 );
                 self.time.set( 'last-record', -1 );
+                self.appstate['uploadedcnt'].set( 'uploadedcnt-str', uploadedcnt);
+                self.appstate['deviceid'].set( 'deviceid-str', device.uuid);
 
-                // Start asynchronos sensor polling
-                geoLocateStart();
+                //geoLocateUpdate();
+
+                // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
+                // GeoLocate
+                gpsTid = setInterval(geoLocateUpdate, 500);
+                // Send current position back to server.
+                posTid = setInterval(sendcurrentpos, 10000);
+                sendcurrentpos();
+                // Upload current data track to the server.
+                //posTid = setInterval(postFullData, 10000);
+                
+                // Get the accelerometer going
                 accelerometerStart();
+                // And grab those sensors!
                 ioioStart();
             },
 
@@ -214,13 +224,12 @@ STP.app = function(){
                     self.data.points.image.push( imagename );
                     var accel = self.sensors['accel'];
                     self.data.points.accelerometer.push(accel.get( 'combined' ));
-                    self.data.points["shakeevent-yn"].push(accel.get( 'shake' ));
+                    self.data.points["shakeeventyn"].push(accel.get( 'shake' ));
                     
                     // Write data at every interval in case of crash, etc.
                     self.writeData(function() { console.log( "Data written successfully" ); });
-
-                    // Send current position back to server.
-                    sendcurrentpos();
+                    // Might as well upload it as well
+                    postFullData();
 
                     // If camera is not busy take picture.
                     if ( cameraReady === true && cameraBusy === false ) {
@@ -259,7 +268,20 @@ STP.app = function(){
             },
 
             geoLocateStart = function() {
-                watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
+                //watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
+                watchID=navigator.geolocation.watchPosition(
+                    geoSuccessHandler, 
+                    geoErrorHandler, 
+                    {enableHighAccuracy:true}
+                );
+            },
+
+            geoLocateUpdate = function() {
+                watchID=navigator.geolocation.getCurrentPosition(
+                    geoSuccessHandler, 
+                    geoErrorHandler 
+                    //,{enableHighAccuracy:true}
+                );
             },
 
             geoLocateStop = function() {
@@ -268,9 +290,12 @@ STP.app = function(){
 
             geoSuccessHandler = function( position ) {
                 var geoloc = self.sensors['geoloc'];
-                geoloc.set( 'lat', position.coords.latitude );
-                geoloc.set( 'lon', position.coords.longitude );
-                geoloc.set( 'count', geoloc.get('count')+1 );
+                // only update the GPS count if we have recieved new coords
+                if(position.coords.latitude!=geoloc.get( 'lat') && position.coords.longitude!=geoloc.get( 'lon')) {
+                   geoloc.set( 'lat', position.coords.latitude );
+                    geoloc.set( 'lon', position.coords.longitude );
+                    geoloc.set( 'count', geoloc.get('count')+1 ); 
+                }
             },
 
             accelerometerStart = function() {
@@ -310,27 +335,51 @@ STP.app = function(){
             sendcurrentpos = function (){
 
                 var geoloc = self.sensors['geoloc'],                
-                    posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",
+                    myposturl = posturl,
                     lat = geoloc.get( "lat" ),
                     lng = geoloc.get( "lon" );
 
                 $.ajax({
-                    url: posturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng,
+                    url: myposturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
                     error: function(XMLHttpRequest, textStatus, errorThrown){
-                        ui.cpos.text('Current position: failed to send');
-                        geoloc.set( "message", "Failed to send" );
-                        setTimeout(function() {
-                                geoloc.set( "message", "" );
-                            }, 2000);
+                        geoloc.set( "message", "Failed to upload current location" );
+                        setTimeout(function() {  geoloc.set( "message", "" ); }, 2000);
                     },
                     success: function(data){
-                        geoloc.set( "message", "Geoloc sent successfully." );
-                        setTimeout(function() {
-                                geoloc.set( "message", "" );
-                            }, 2000);
+                        geoloc.set( "message", "Uploaded current location" );
+                        setTimeout(function() { geoloc.set( "message", "" ); }, 2000);
                         console.log( "send successful" );
                     }
                 });
+            },
+
+            // Post data to server
+            postFullData = function(){
+                self.appstate['uploadedcnt'].set( 'uploadedcnt-str', uploadedcnt);
+                uploadedcnt++;
+                /*
+                $.ajax({
+                    url: myposturl+"?q=savedata&uuid="+device.uuid, 
+                    type:"post",
+                    data: { 
+                        vars:JSON.stringify(self.data)
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown){ 
+                        //appstate.fails++;
+                        var msg = ' e:'+XMLHttpRequest.statusText+" s:"+textStatus+" et:"+errorThrown;
+                        //ui.failed.text('Fails:'+appstate.fails+msg);
+                        //ui.uploadbut.text('Upload Data'); 
+                    },
+                    success: function(data){
+                        //appstate.sub++;
+                        //currentdata.track.uploaded = currentdata.track.points.elapsed.length;
+                        //ui.sub.text('Uploaded:'+appstate.sub+" msg: "+data); 
+                        //ui.points.text('Data: Uploaded: '+currentdata.track.uploaded+" Points: "+currentdata.track.points.elapsed.length);
+                        //ui.uploadbut.text('Upload Data');
+                        //ui.failed.text('Fails:'+appstate.fails);
+                    }
+                });
+                */                 
             },
 
             takePicture = function( filename ) {

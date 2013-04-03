@@ -43,6 +43,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 
 /**
  * This class manages a connection with the ioio board
@@ -103,10 +104,7 @@ public class IOIOconnect extends CordovaPlugin {
     // Echo strings back to javascript
     private void ioioIsAlive(String msg, CallbackContext callbackContext) {
         //String message = "Led: "+ioioObj.onoff+" Status: "+ioioObj.status;
-    	//Context thiscontext = this.cordova.getActivity().getApplicationContext();
-    	//Intent ioioService = new Intent(thiscontext, HelloIOIOService.class);
-    	
-    	//bindService(new Intent(Binding.this,  HelloIOIOService.class), mConnection, Context.BIND_AUTO_CREATE);
+    	//sendBroadcast(Intent intent);
     	
         String message = "Alive";
         ioioSwitchOnoff();
@@ -116,6 +114,7 @@ public class IOIOconnect extends CordovaPlugin {
             callbackContext.error("IOIO.java Expected one non-empty string argument.");
         }
     }
+    
 
     // Switch
     private void ioioSwitchOnoff() {

@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.IBinder;
 import android.os.Binder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.IOIO;
@@ -24,6 +25,9 @@ import android.os.Messenger;
 import java.util.Date;
 import android.content.Context;
 import android.app.Service;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 
 
 import uk.org.opensystem.R;
@@ -45,18 +49,6 @@ public class HelloIOIOService extends IOIOService {
 	private int counter = 0;
 	Context thiscontext;
 	
-	public int getextra(){
-		return 44;
-	}
-	// MANAGE MESSAGING
-	// This is the object that receives interactions from clients.  See
-    // RemoteService for a more complete example.
-    //private final IBinder mBinder = new LocalBinder();
-    //public class LocalBinder extends Binder {
-    //	HelloIOIOService getService() {
-    //        return HelloIOIOService.this;
-    //    }
-    //}
     @Override
     public IBinder onBind(Intent intent) {
     	//Log.d("helloIOIOService.java", "IOIO bound service");
@@ -64,6 +56,21 @@ public class HelloIOIOService extends IOIOService {
         return null;
     }
 	
+    // Messageing
+    private void speedExceedMessageToActivity() {
+        Intent intent = new Intent("speedExceeded");
+        sendLocationBroadcast(intent);
+    }
+    
+    private void sendLocationBroadcast(Intent intent){
+    	int currentSpeed = 1, latitude = 2, longitude=3;
+        intent.putExtra("currentSpeed", currentSpeed);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude); 
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    	Log.d("helloIOIOService.java", "IOIO Intent has broadcast");
+    }	
+
     // USUAL IOIO SERVICE STUFF
 	@Override
 	public void onStart(Intent intent, int startId) {  
@@ -73,6 +80,9 @@ public class HelloIOIOService extends IOIOService {
 		// Service has been started
 		super.onStart(intent, startId);
 		Log.d("helloIOIOService.java", "IOIO started service");
+		
+		// Send a message
+		sendMessage();
 		
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
@@ -131,6 +141,8 @@ public class HelloIOIOService extends IOIOService {
 	 // Various methods to get data
     private void sendMessage()
     {
+    	Log.d("helloIOIOService.java", "IOIO sending message");
+    	speedExceedMessageToActivity();
     	
         //Intent intent = new Intent("IOIOData");     
         //intent.putExtra("LED", get_LED());

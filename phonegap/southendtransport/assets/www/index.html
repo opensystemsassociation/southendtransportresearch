@@ -27,11 +27,14 @@
     </head>
     <body>
         <div class="app">
-        	<div class="message" data-bind-geoloc="message">Sent to server?</div>
+        	<div>
+                UPLOADED: <span id="uploadedcnt" data-bind-uploadedcnt="uploadedcnt-str">??</span> | 
+                <span id="ioio" data-bind-ioio="ioio-str">??</span> | 
+                SHAKE: <span id="shake" data-bind-accel="shake">??</span>
+                <span class="message" data-bind-geoloc="message">Sent to server?</span>
+
+            </div>
             <dl>
-                <dt class="label">IOIO</dt>
-                <dd id="ioio" data-bind-ioio="ioio-str">??</dd>
-                <hr />
                 <dt class="label">Now</dt>
                 <dd class="time" data-bind-time="now-str">??</dd>
                 <dt class="label">Start</dt>
@@ -48,8 +51,11 @@
                 <hr/>
                 <dt class="label">Accel</dt>
                 <dd id="accel" data-bind-accel="combined">??</dd>
-                <dt class="label">Shake</dt>
-                <dd id="shake" data-bind-accel="shake">??</dd>
+                <hr/>
+                <dt class="label">Deviceid</dt>
+                <dd id="deviceid" data-bind-deviceid="deviceid-str">??</dd>
+
+                
             </dl>
             <hr/>
             <textarea class="description" id="description" placeholder="Add a description of the journey"></textarea>
