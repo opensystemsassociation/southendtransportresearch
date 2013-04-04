@@ -3,5 +3,6 @@
     <string name="app_name">southendtransport</string>
     <string name="hide_show_cam">Hide/Show Camera</string>
     <string name="switch_cam">Switch Camera</string>
+    <string name="choose_env">Choose Env</string>
     <string name="stop_activity">Stop Activity</string>
 </resources>

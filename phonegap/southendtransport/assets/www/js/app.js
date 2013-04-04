@@ -10,17 +10,42 @@ STP.app = function(){
     function App(){
 
         // -- Public
+        // This config is selected on the phone at the start of the application.
+        // If override is set then the selection is not offered.
+        this.localconfig = {
+            "override" : "null",
+            "envs" : [
+                "dev-gareth",
+                "production"
+            ],
+            "domain"  : {
+                "dev-gareth"    : "http://192.168.0.11/",
+                "production"    : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
+            }
+        };
+
+        // This is remote config. Pulled from the server when environment is choosen.
         this.config = {
-            activityType: 001,
-            activityId: 001,
             tickInterval: 1000, // millisecs
             recordInterval : 5,
             stopAfter : 120*60, // 2 hours maximum.
-            dirPrefix : "track"
+            activityTags : [
+                "favourite route",
+                "least favourites route",
+                "most scenic route",
+                "least scenic route"
+            ],
+            phonename   : "bob",
+            domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/",
+            postUrls    : {
+                data : ""
+            }
         };
 
+        // Empty data structure to be sent back to server.
         this.data = {
             "id"    : 0,
+            "title"    : 0,
             "description" : "",
             "starttime": "",
             "device" : {
@@ -28,7 +53,7 @@ STP.app = function(){
                 "cordova": "",
                 "platform": "",
                 "version": "",
-                "uuid": ""
+                "uuid": "c8f95d649cd7addd"
             },
             "points" : {
                   "elapsed"         : [],
@@ -49,17 +74,6 @@ STP.app = function(){
                   deviceReadyHandler(); //this is the browser
             }
 
-            /* DEBUGGING */
-            /*
-            geoSuccessHandler( {
-                coords : {
-                    latitude : 20,
-                    longitude : 40
-                },
-                timestamp : new Date().now
-            } );
-            */
-
         };
 
         this.time = STP.BindableModel( 'time' );
@@ -69,10 +83,7 @@ STP.app = function(){
             'accel'     : new STP.BindableModel( 'accel' ),
             'ioio'     : new STP.BindableModel( 'ioio')
         };
-        this.appstate = {
-            'uploadedcnt'    : new STP.BindableModel( 'uploadedcnt' ),
-            'deviceid'    : new STP.BindableModel( 'deviceid' )
-        };
+        this.appstate = new STP.BindableModel( 'appstate' );
 
         this.switchCamera = function() {
 
@@ -91,11 +102,19 @@ STP.app = function(){
             $(".start").addClass("hide");
             $(".exit").removeClass("hide");
         };
-        
+
         this.exitApplication = function() {
+
             navigator.app.exitApp(); 
+
         };
-        
+
+        this.chooseEnv = function() {
+
+            selectEnvironment();
+
+        };
+
         this.writeData = function( successHandler ) {
             // Write to file.
             activityDataEntry.createWriter(function( writer ) {
@@ -104,6 +123,7 @@ STP.app = function(){
                     writer.write( JSON.stringify( self.data ) );
 
                 }, writeErrorHandler );
+
         };
 
         this.startActivity = function() {
@@ -151,7 +171,7 @@ STP.app = function(){
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
             uploadedcnt = 0, 
-            posturl = "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/index.php",  
+            posturl = self.domain + "index.php",  
 
             documentReadyHandler = function() {
 
@@ -167,6 +187,75 @@ STP.app = function(){
 
             deviceReadyHandler = function() {
 
+                initialise();
+                getConfig();
+
+            },
+
+            selectEnvironment = function() {
+
+                // Populate available envs.
+                var $select = $("#environments");
+                $select[0].options[0] = new Option("Select an environment");
+                $select[0].options[0].value = "Select an environment";
+                for (var i = 0; i < self.localconfig.envs.length; i++) {
+                    $select[0].options[i+1] = new Option(self.localconfig.envs[i]);
+                    $select[0].options[i+1].value = self.localconfig.envs[i];
+                };
+
+                // Show.
+                $(".environment").show();
+
+                // Listen for change, set env and get config.
+                var onChangeHandler = function() {
+                    $("option:selected", $select).each(function () {
+                        var env = $(this).val();
+                        setDomain( env );
+                        getConfig();
+                    });
+                    // Remove listener.
+                    $select.off("change", onChangeHandler);
+                };
+                $select.on("change", onChangeHandler);
+
+            },
+
+            setDomain = function( env ) {
+
+                self.config.domain = self.localconfig.domain[env];
+
+            },
+
+            getConfig = function() {
+
+                $("#environments").blur().empty();
+                $(".environment").hide();
+
+                var deviceConfig = "config/" + self.data.device.uuid + ".json";
+                $.getJSON(self.config.domain + deviceConfig,
+                        function( remoteconfig ) {
+                            parseConfig( remoteConfig );
+                            alert( "Config updated from location: "
+                                + self.config.domain + deviceConfig );
+                        })
+                        .fail(function() { 
+                            alert( "Config not found at this location: "
+                                + self.config.domain + deviceConfig );
+                        });
+
+            },
+            
+            parseConfig = function( remoteconfig ) {
+
+                // Extend config.
+                $.extend(self.config, remoteconfig);
+                // Add phonename (from remote config) to data.
+                self.data.phonename = remoteconfig.phonename;
+
+            },
+
+            initialise  = function() {
+
                 // Handle docready separate to deviceready.
                 $(document).ready( documentReadyHandler );
 
@@ -178,6 +267,9 @@ STP.app = function(){
                 self.data.device.uuid = device.uuid;
                 self.data.description = document.getElementById("description").value;
                 
+                // Configuration. - URL for config shouldn't matter 
+                // because the config is in GIT and should be the same everywhere.
+
                 // Defaults.
                 self.sensors['geoloc'].set( 'lat', 0 );
                 self.sensors['geoloc'].set( 'lon', 0 );
@@ -185,8 +277,8 @@ STP.app = function(){
                 self.sensors['ioio'].set( 'ioio-str', 0 );
                 self.time.set( 'start', -1 );
                 self.time.set( 'last-record', -1 );
-                self.appstate['uploadedcnt'].set( 'uploadedcnt-str', uploadedcnt);
-                self.appstate['deviceid'].set( 'deviceid-str', device.uuid);
+                self.appstate.set( 'uploadedcnt-str', uploadedcnt);
+                self.appstate.set( 'deviceid-name', self.data.device.uuid + " | " + self.config.phonename);
 
                 //geoLocateUpdate();
 
@@ -203,6 +295,13 @@ STP.app = function(){
                 accelerometerStart();
                 // And grab those sensors!
                 ioioStart();
+
+            },
+
+            enableStart = function() {
+
+                $(".start").removeClass( "hide" );
+
             },
 
             tickHandler = function() {
@@ -335,19 +434,16 @@ STP.app = function(){
             sendcurrentpos = function (){
 
                 var geoloc = self.sensors['geoloc'],                
-                    myposturl = posturl,
                     lat = geoloc.get( "lat" ),
                     lng = geoloc.get( "lon" );
 
                 $.ajax({
-                    url: myposturl+"?q=savelivedevice&uuid="+device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
+                    url: posturl+"?q=savelivedevice&uuid="+self.data.device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
                     error: function(XMLHttpRequest, textStatus, errorThrown){
-                        geoloc.set( "message", "Failed to upload current location" );
-                        setTimeout(function() {  geoloc.set( "message", "" ); }, 2000);
+                        geoloc.set( "message", "N" );
                     },
                     success: function(data){
-                        geoloc.set( "message", "Uploaded current location" );
-                        setTimeout(function() { geoloc.set( "message", "" ); }, 2000);
+                        geoloc.set( "message", "Y" );
                         console.log( "send successful" );
                     }
                 });
@@ -355,11 +451,11 @@ STP.app = function(){
 
             // Post data to server
             postFullData = function(){
-                self.appstate['uploadedcnt'].set( 'uploadedcnt-str', uploadedcnt);
+                self.appstate.set( 'uploadedcnt-str', uploadedcnt);
                 uploadedcnt++;
                 /*
                 $.ajax({
-                    url: myposturl+"?q=savedata&uuid="+device.uuid, 
+                    url: posturl+"?q=savedata&uuid="+device.uuid, 
                     type:"post",
                     data: { 
                         vars:JSON.stringify(self.data)
@@ -434,40 +530,24 @@ STP.app = function(){
                 );
             },
 
-            // File system
+            // File system accessed.
             fsSuccessHandler = function( fileSystem ) {
 
-                // Determine next ID based on existing directories.
                 var rootEntry = fileSystem.root,
+                rootSuccessHandler = function( dirEntry ) {
 
-                    rootSuccessHandler = function( dirEntry ) {
+                    console.log("Directory created successfully: " + dirEntry.name );
+                    // Get or create data directory.
+                    dirEntry.getDirectory(device.uuid, { create : true },
+                        function( uuidDirEntry ) {
+                            console.log("Directory created successfully: " + uuidDirEntry.name );
+                            dataDirEntry = uuidDirEntry;
+                            enableStart();
+                        },
+                        fsErrorHandler );
+                };
 
-                        var directoryReader = dirEntry.createReader();
-                        directoryReader.readEntries(function( entries ) {
-                            // Loop through existing directories and get highest id from names.
-                            self.data.id = 0;
-                            for(var i=0; i < entries.length; i++) {
-                                console.log(entries[i].name);
-                                if(entries[i].isDirectory) {
-                                    var currId = parseInt( entries[i].name.replace(self.config.dirPrefix, '') );
-                                    // console.log(entries[i].name.replace(self.config.dirPrefix, '') );
-                                    // console.log( parseInt( entries[i].name.replace(self.config.dirPrefix, '')) );
-                                    // console.log( currId );
-                                    if( currId > self.data.id ) {
-                                        self.data.id = currId;
-                                    }
-                                }
-                            }
-                            self.data.id++;
-                            // Store parent to create dir later with activity id.
-                            dataDirEntry = dirEntry;
-
-                            alert( "Please note down activity id: " + self.data.id );
-
-                        }, fsErrorHandler );
-
-                    };
-
+                // Get or create data directory.
                 rootEntry.getDirectory('southendtransportdata', { create : true },
                     rootSuccessHandler, fsErrorHandler );
 
@@ -476,13 +556,14 @@ STP.app = function(){
             createActivityFile = function( successCallback ) {
 
                 // Create directory with new id
-                dataDirEntry.getDirectory(self.config.dirPrefix + self.data.id, { create : true },
+                self.data.title = new Date().toFormattedString();
+                dataDirEntry.getDirectory( self.data.title, { create : true },
                     function( dirEntry ) {
 
                         console.log( 'Successfully create dir: ' + dirEntry.name );
                         activityDirEntry = dirEntry;
 
-                        activityDirEntry.getFile("rawdata.json", { create: true }, function( fileEntry ) {
+                        activityDirEntry.getFile("data.json", { create: true }, function( fileEntry ) {
                             activityDataEntry = fileEntry;
                             console.log( 'success:' + activityDataEntry.fullPath );
                             // Success callback starts tick.
@@ -639,7 +720,26 @@ UTIL.DataBinder = function( object_id ) {
 
     return pubSub;
 }
+
 // Pad integer with zeros. returns string.
 UTIL.pad = function( number, digits ) {
     return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
 }
+
+/*
+ * Extending native  prototypes
+ */
+String.prototype.padLeft = function (length, character) { 
+    return new Array(length - this.length + 1).join(character || ' ') + this; 
+};
+
+Date.prototype.toFormattedString = function () {
+    return [
+        String(this.getFullYear()),
+        String(this.getMonth()+1).padLeft(2, '0'),
+        String(this.getDate()).padLeft(2, '0'),
+        String(this.getHours()).padLeft(2, '0'),
+        String(this.getMinutes()).padLeft(2, '0'),
+        String(this.getSeconds()).padLeft(2, '0')
+            ].join("-");
+};

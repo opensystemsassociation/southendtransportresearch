@@ -27,39 +27,41 @@
     </head>
     <body>
         <div class="app">
-        	<div>
-                UPLOADED: <span id="uploadedcnt" data-bind-uploadedcnt="uploadedcnt-str">??</span> | 
+            <div class="environment">
+                <select id="environments"></select>
+            </div>
+                <div>
+                UPLOADED: <span id="uploadedcnt" data-bind-appstate="uploadedcnt-str">??</span> | 
                 <span id="ioio" data-bind-ioio="ioio-str">??</span> | 
-                SHAKE: <span id="shake" data-bind-accel="shake">??</span>
-                <span class="message" data-bind-geoloc="message">Sent to server?</span>
+                SHAKE: <span id="shake" data-bind-accel="shake">??</span> |
+                CURR POS:
+                <span class="message" data-bind-geoloc="message">?</span>
 
             </div>
-            <dl>
+            <dl class="data-container">
                 <dt class="label">Now</dt>
-                <dd class="time" data-bind-time="now-str">??</dd>
+                <dd class="data time" data-bind-time="now-str">??</dd>
                 <dt class="label">Start</dt>
-                <dd class="time" data-bind-time="start-str">??</dd>
+                <dd class="data time" data-bind-time="start-str">??</dd>
                 <dt class="label">Duration</dt>
-                <dd class="time" data-bind-time="duration">??</dd>
+                <dd class="data time" data-bind-time="duration">??</dd>
                 <hr/>
                 <dt class="label">Lat</dt>
-                <dd class="location" data-bind-geoloc="lat">??</dd>
+                <dd class="data location" data-bind-geoloc="lat">??</dd>
                 <dt class="label">Long</dt>
-                <dd class="location" data-bind-geoloc="lon">??</dd>
+                <dd class="data location" data-bind-geoloc="lon">??</dd>
                 <dt class="label">GeoCount</dt>
-                <dd class="location" data-bind-geoloc="count">??</dd>
+                <dd class="data location" data-bind-geoloc="count">??</dd>
                 <hr/>
                 <dt class="label">Accel</dt>
-                <dd id="accel" data-bind-accel="combined">??</dd>
+                <dd class="data" data-bind-accel="combined">??</dd>
                 <hr/>
-                <dt class="label">Deviceid</dt>
-                <dd id="deviceid" data-bind-deviceid="deviceid-str">??</dd>
-
-                
+                <dt class="label">Deviceid | <span>Phonename</span></dt>
+                <dd class="data" data-bind-appstate="deviceid-name">??</dd>
+                <hr/>
             </dl>
-            <hr/>
             <textarea class="description" id="description" placeholder="Add a description of the journey"></textarea>
-            <button class="start" onclick="stp.startActivity();">Start</button>
+            <button class="start hide" onclick="stp.startActivity();">Start</button>
             <button class="exit hide" onclick="stp.exitApplication();">Exit</button>
         </div>
         <script type="text/javascript" src="cordova-2.5.0.js"></script>

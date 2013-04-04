@@ -79,9 +79,9 @@ public class southendtransport extends DroidGap
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-        case R.id.switch_cam:
-        	Log.d("southendtransport.java", "Hide - show cam");
-            this.sendJavascript("javascript: stp.switchCamera()");
+        case R.id.choose_env:
+        	Log.d("southendtransport.java", "Choose env");
+            this.sendJavascript("javascript: stp.chooseEnv()");
             return true;
         case R.id.stop_activity:
         	Log.d("southendtransport.java", "Schttop");
