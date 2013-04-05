@@ -61,12 +61,21 @@
                 <hr/>
             </dl>
             <textarea class="description" id="description" placeholder="Add a description of the journey"></textarea>
+            <div class="tag">
+                <select id="tags"></select>
+            <!--
+            <div id="tags">
+                <a class="current-indicator">Select tag</a>
+                <ul class="list-parent"></ul>
+            </div>
+            -->
             <button class="start hide" onclick="stp.startActivity();">Start</button>
             <button class="exit hide" onclick="stp.exitApplication();">Exit</button>
         </div>
         <script type="text/javascript" src="cordova-2.5.0.js"></script>
         <script type="text/javascript" src="js/lib/jquery/jquery-1.9.1.min.js"></script>
-        <script type="text/javascript" src="js/app.js"></script>
+        <script type="text/javascript" src="js/utils.js"></script>
+        <script type="text/javascript" src="js/app.js"></script> <!-- Depends on utils. -->
         <script type="text/javascript">
             var stp = STP.app();
             stp.initialise();

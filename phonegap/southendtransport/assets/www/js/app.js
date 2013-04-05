@@ -69,9 +69,11 @@ STP.app = function(){
             console.log('init');
             // Other document events: 'load', 'deviceready', 'offline', and 'online'.
             if (navigator.userAgent.match(/(Android)/)) {
+                isDevice = true;
                 document.addEventListener("deviceready", deviceReadyHandler, false);
             } else {
-                  deviceReadyHandler(); //this is the browser
+                isDevice = false;
+                deviceReadyHandler(); //this is the browser
             }
 
         };
@@ -158,6 +160,7 @@ STP.app = function(){
 
         // -- Private
         var self = this,
+            isDevice = false,
             dataFileCreated = false,
             cameraReady = false,
             cameraBusy = false,
@@ -189,6 +192,10 @@ STP.app = function(){
 
                 initialise();
                 getConfig();
+                if( ! isDevice ){
+                    console.log("Is it on device: " + isDevice);
+                    parseConfig();
+                }
 
             },
 
@@ -234,7 +241,7 @@ STP.app = function(){
                 var deviceConfig = "config/" + self.data.device.uuid + ".json";
                 $.getJSON(self.config.domain + deviceConfig,
                         function( remoteconfig ) {
-                            parseConfig( remoteConfig );
+                            parseConfig( remoteconfig );
                             alert( "Config updated from location: "
                                 + self.config.domain + deviceConfig );
                         })
@@ -246,6 +253,25 @@ STP.app = function(){
             },
             
             parseConfig = function( remoteconfig ) {
+
+                /*
+                var $tags = $("#tags"),
+                    $ul = $(".list-parent", $tags),
+                    li = "<li><a href='#'>%s</a></li>";
+                for (var i = 0; i < self.config.activityTags.length; i++) {
+                    $ul.append(li.replace("%s", self.config.activityTags[i]));
+                }
+                UTIL.dropDown( $tags );
+                */
+
+                // Populate available envs.
+                var $tags = $("#tags");
+                $tags[0].options[0] = new Option("Select a tag...");
+                $tags[0].options[0].value = "Select a tag...";
+                for (var i = 0; i < self.config.activityTags.length; i++) {
+                    $tags[0].options[i+1] = new Option(self.config.activityTags[i]);
+                    $tags[0].options[i+1].value = self.config.activityTags[i];
+                };
 
                 // Extend config.
                 $.extend(self.config, remoteconfig);
@@ -259,42 +285,44 @@ STP.app = function(){
                 // Handle docready separate to deviceready.
                 $(document).ready( documentReadyHandler );
 
-                window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fsSuccessHandler, fsErrorHandler);
+                if( isDevice ) {
+                    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, fsSuccessHandler, fsErrorHandler);
                 
-                self.data.device.name = device.name;
-                self.data.device.platform = device.platform;
-                self.data.device.version = device.version;
-                self.data.device.uuid = device.uuid;
-                self.data.description = document.getElementById("description").value;
+                    self.data.device.name = device.name;
+                    self.data.device.platform = device.platform;
+                    self.data.device.version = device.version;
+                    self.data.device.uuid = device.uuid;
+                    self.data.description = document.getElementById("description").value;
                 
-                // Configuration. - URL for config shouldn't matter 
-                // because the config is in GIT and should be the same everywhere.
+                    // Configuration. - URL for config shouldn't matter 
+                    // because the config is in GIT and should be the same everywhere.
 
-                // Defaults.
-                self.sensors['geoloc'].set( 'lat', 0 );
-                self.sensors['geoloc'].set( 'lon', 0 );
-                self.sensors['geoloc'].set( 'count', 0 );
-                self.sensors['ioio'].set( 'ioio-str', 0 );
-                self.time.set( 'start', -1 );
-                self.time.set( 'last-record', -1 );
-                self.appstate.set( 'uploadedcnt-str', uploadedcnt);
-                self.appstate.set( 'deviceid-name', self.data.device.uuid + " | " + self.config.phonename);
+                    // Defaults.
+                    self.sensors['geoloc'].set( 'lat', 0 );
+                    self.sensors['geoloc'].set( 'lon', 0 );
+                    self.sensors['geoloc'].set( 'count', 0 );
+                    self.sensors['ioio'].set( 'ioio-str', 0 );
+                    self.time.set( 'start', -1 );
+                    self.time.set( 'last-record', -1 );
+                    self.appstate.set( 'uploadedcnt-str', uploadedcnt);
+                    self.appstate.set( 'deviceid-name', self.data.device.uuid + " | " + self.config.phonename);
 
-                //geoLocateUpdate();
+                    //geoLocateUpdate();
 
-                // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
-                // GeoLocate
-                gpsTid = setInterval(geoLocateUpdate, 500);
-                // Send current position back to server.
-                posTid = setInterval(sendcurrentpos, 10000);
-                sendcurrentpos();
-                // Upload current data track to the server.
-                //posTid = setInterval(postFullData, 10000);
-                
-                // Get the accelerometer going
-                accelerometerStart();
-                // And grab those sensors!
-                ioioStart();
+                    // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
+                    // GeoLocate
+                    gpsTid = setInterval(geoLocateUpdate, 500);
+                    // Send current position back to server.
+                    posTid = setInterval(sendcurrentpos, 10000);
+                    sendcurrentpos();
+                    // Upload current data track to the server.
+                    //posTid = setInterval(postFullData, 10000);
+
+                    // Get the accelerometer going
+                    accelerometerStart();
+                    // And grab those sensors!
+                    ioioStart();
+                }
 
             },
 
@@ -585,7 +613,11 @@ STP.app = function(){
                 alert( 'Filesystem error:' + String(msg) );
             },
             geoErrorHandler = function( msg ) {
-                alert( 'Geolocation error' + msg );
+                if( isDevice ) {
+                    alert( 'Geolocation error' + msg );
+                } else {
+                    // console.log( 'Geolocation error' + msg );
+                }
             };
 
 
@@ -677,69 +709,4 @@ STP.plugins.ioioStartup = function(params, callbackSuccess, callbackError) {
         params
     );
 };
-
-
-/*
- * Utilities - not project specific.
- */
-var UTIL = UTIL || {};
-
-/*
- * Allows for simple 2 way binding of DOM elements to a model.
- */
-UTIL.DataBinder = function( object_id ) {
-    // Use a jQuery object as simple PubSub
-    var pubSub = jQuery({});
-
-    // We expect a `data` element specifying the binding
-    // in the form: data-bind-<object_id>="<property_name>"
-    var data_attr = "bind-" + object_id,
-        message = object_id + ":change";
-
-    // Listen to change events on elements with the data-binding attribute and proxy
-    // them to the PubSub, so that the change is "broadcasted" to all connected objects
-    jQuery( document ).on( "change", "[data-" + data_attr + "]", function( evt ) {
-        var $input = jQuery( this );
-
-        pubSub.trigger( message, [ $input.data( data_attr ), $input.val() ] );
-    });
-    // PubSub propagates changes to all bound elements, setting value of
-    // input tags or HTML content of other tags
-
-    pubSub.on( message, function( evt, prop_name, new_val ) {
-        jQuery( "[data-" + data_attr + "=" + prop_name + "]" ).each( function() {
-            var $bound = jQuery( this );
-
-            if ( $bound.is("input, textarea, select") ) {
-                $bound.val( new_val );
-            } else {
-                $bound.html( new_val );
-            }
-        });
-    });
-
-    return pubSub;
-}
-
-// Pad integer with zeros. returns string.
-UTIL.pad = function( number, digits ) {
-    return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
-}
-
-/*
- * Extending native  prototypes
- */
-String.prototype.padLeft = function (length, character) { 
-    return new Array(length - this.length + 1).join(character || ' ') + this; 
-};
-
-Date.prototype.toFormattedString = function () {
-    return [
-        String(this.getFullYear()),
-        String(this.getMonth()+1).padLeft(2, '0'),
-        String(this.getDate()).padLeft(2, '0'),
-        String(this.getHours()).padLeft(2, '0'),
-        String(this.getMinutes()).padLeft(2, '0'),
-        String(this.getSeconds()).padLeft(2, '0')
-            ].join("-");
-};
+// Moved UTILs to separate file.
