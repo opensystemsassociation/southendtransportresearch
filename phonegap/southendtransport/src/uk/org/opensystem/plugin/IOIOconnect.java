@@ -44,6 +44,7 @@ import android.os.RemoteException;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
+import android.support.v4.content.LocalBroadcastManager;
 
 /**
  * This class manages a connection with the ioio board
@@ -84,8 +85,11 @@ public class IOIOconnect extends CordovaPlugin {
         ioioService.putExtra("loadinterval", 800); // Set LED flash interval
         thiscontext.startService(ioioService);
         
-        
-        //bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        // Setup a method to receive messages broadcast from the IOIO
+        LocalBroadcastManager.getInstance(thiscontext).registerReceiver(
+                mMessageReceiver, 
+                new IntentFilter("speedExceeded")
+        );
         
         // Send a message back to the Javascript call
         Log.d("helloIOIOService.java", "IOIO Started from the plugin"); 
@@ -127,12 +131,17 @@ public class IOIOconnect extends CordovaPlugin {
         */
     }
 
-    /* ==============================================================================
-     * IOIO MESSAGING
-     * ==============================================================================
-     */
-    
+    // recieve massage from the IOIO device
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+    	@Override
+    	public void onReceive(Context context, Intent intent) {
+    		String action = intent.getAction();
+    		Double currentSpeed = intent.getDoubleExtra("currentSpeed", 20);
+    		Double currentLatitude = intent.getDoubleExtra("latitude", 0);
+    		Double currentLongitude = intent.getDoubleExtra("longitude", 0);
+    		//  React to local broadcast message
+    		Log.d("southendtransport.java", "IOIO plugin got nmessage");
+    	}
+    };
 
-    
-  
 }

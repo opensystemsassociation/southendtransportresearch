@@ -19,21 +19,12 @@
 
 package uk.org.opensystem;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
 import android.view.WindowManager;
-import android.view.Window;
-
 import org.apache.cordova.*;
-
 
 public class southendtransport extends DroidGap 
 {
@@ -45,28 +36,8 @@ public class southendtransport extends DroidGap
         // Set by <content src="index.html" /> in config.xml
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.loadUrl(Config.getStartUrl());
-        //super.loadUrl("file:///android_asset/www/index.html")
-        
-        
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, 
-                new IntentFilter("speedExceeded")
-        );
-        
-           
+        //super.loadUrl("file:///android_asset/www/index.html")    
     }
-    
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-    	@Override
-    	public void onReceive(Context context, Intent intent) {
-    		String action = intent.getAction();
-    		Double currentSpeed = intent.getDoubleExtra("currentSpeed", 20);
-    		Double currentLatitude = intent.getDoubleExtra("latitude", 0);
-    		Double currentLongitude = intent.getDoubleExtra("longitude", 0);
-    		//  ... react to local broadcast message
-    		Log.d("southendtransport.java", "IOIO got local message.. ");
-    	}
-    };
     
     // CAMERA CONTROL
     @Override
