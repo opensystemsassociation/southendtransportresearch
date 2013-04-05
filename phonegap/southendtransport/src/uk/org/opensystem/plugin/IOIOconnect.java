@@ -2,55 +2,23 @@ package uk.org.opensystem.plugin;
 
 import org.apache.cordova.api.CallbackContext;
 import org.apache.cordova.api.CordovaPlugin;
-import org.apache.cordova.api.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+// import org.json.JSONObject;
 
-import uk.org.opensystem.HelloIOIOService;
-
-
-import ioio.lib.api.AnalogInput;
-import ioio.lib.api.DigitalOutput;
-import ioio.lib.api.IOIO;
-import ioio.lib.api.PwmOutput;
-import ioio.lib.api.exception.ConnectionLostException;
-import ioio.lib.util.BaseIOIOLooper;
-import ioio.lib.util.IOIOLooper;
-import ioio.lib.util.android.IOIOActivity;
-
-import android.os.Bundle;
-import android.view.View;
 import android.util.Log;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.Context;
-
-import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.app.Service;
-import android.content.ServiceConnection;
-import android.os.IBinder;
-import android.os.Binder;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.Toast;
-import android.os.Handler;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.RemoteException;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
+import uk.org.opensystem.HelloIOIOService;
 import android.support.v4.content.LocalBroadcastManager;
 
 /**
  * This class manages a connection with the ioio board
  */
 public class IOIOconnect extends CordovaPlugin {
-	private Context thiscontext;
+	private Context thisContext;
 	private Intent ioioService;
   
     
@@ -80,13 +48,13 @@ public class IOIOconnect extends CordovaPlugin {
     // Initialise IOIO service (Called from Javascript)
     private void ioioStartup(CallbackContext callbackContext) {
     	// Initialise the service variables and start it it up
-    	thiscontext = this.cordova.getActivity().getApplicationContext();
-    	ioioService = new Intent(thiscontext, HelloIOIOService.class);
+    	thisContext = this.cordova.getActivity().getApplicationContext();
+    	ioioService = new Intent(thisContext, HelloIOIOService.class);
         ioioService.putExtra("loadinterval", 800); // Set LED flash interval
-        thiscontext.startService(ioioService);
+        thisContext.startService(ioioService);
         
         // Setup a method to receive messages broadcast from the IOIO
-        LocalBroadcastManager.getInstance(thiscontext).registerReceiver(
+        LocalBroadcastManager.getInstance(thisContext).registerReceiver(
                 mMessageReceiver, 
                 new IntentFilter("speedExceeded")
         );
@@ -99,10 +67,10 @@ public class IOIOconnect extends CordovaPlugin {
     // Stop IOIO service (Called from Javascript)
     private void ioioStop(CallbackContext callbackContext) {
     	// Grab context and start the service
-        thiscontext.stopService(ioioService);
-        Log.d("helloIOIOService.java", "IOIO Stopped from the plugin"); 
+    	thisContext.stopService(ioioService);
         // Send a message back to the Javascript call
         callbackContext.success("Stopped IOIO service");
+        Log.d("helloIOIOService.java", "IOIO Stopped from the plugin"); 
     }
     
     // Echo strings back to javascript
@@ -131,16 +99,13 @@ public class IOIOconnect extends CordovaPlugin {
         */
     }
 
-    // recieve massage from the IOIO device
+    // Receive massage from the IOIO device
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
     	@Override
     	public void onReceive(Context context, Intent intent) {
-    		String action = intent.getAction();
-    		Double currentSpeed = intent.getDoubleExtra("currentSpeed", 20);
-    		Double currentLatitude = intent.getDoubleExtra("latitude", 0);
-    		Double currentLongitude = intent.getDoubleExtra("longitude", 0);
+    		int interval = intent.getIntExtra("interval", 0);
     		//  React to local broadcast message
-    		Log.d("southendtransport.java", "IOIO plugin got nmessage");
+    		//Log.d("southendtransport.java", "IOIO plugin got message: "+interval);
     	}
     };
 

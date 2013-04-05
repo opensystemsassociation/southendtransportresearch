@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.IBinder;
-import android.os.Binder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import ioio.lib.api.DigitalOutput;
@@ -13,26 +12,14 @@ import ioio.lib.api.exception.ConnectionLostException;
 import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
-import android.app.Activity;
+import ioio.lib.api.AnalogInput;
+import ioio.lib.api.DigitalOutput;
+import ioio.lib.api.IOIO;
+import ioio.lib.api.PwmOutput;
 
-import java.util.Random;
-
-import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Message;
-import android.os.Messenger;
-import java.util.Date;
-import android.content.Context;
-import android.app.Service;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.BroadcastReceiver;
-
-
+import org.json.JSONObject;
 import uk.org.opensystem.R;
-import uk.org.opensystem.R.drawable;
-import uk.org.opensystem.plugin.IOIOconnect;
 import org.apache.cordova.*;
 
 
@@ -43,21 +30,34 @@ import org.apache.cordova.*;
  * For external communications try: https://github.com/nickfox/Update-Android-UI-from-a-Service
  */
 public class HelloIOIOService extends IOIOService {
-	private static String TAG = "IOIOService";
-	private int interval = 1000;
+	private static String TAG = "helloIOIOService.java";
+	private int interval = 500;
 	private boolean onoff  = false;
 	private int counter = 0;
-
+	private Intent broadcastIntent = new Intent("speedExceeded");
+	private IOIOdataObj IOIOdata = new IOIOdataObj();
+	
+	// An object to store IOIO vars in
+	private class IOIOdataObj {
+		// Location to store pin values 
+		int 
+		p1=-1,p2=-1,p3=-1,p4=-1,p5=-1,p6=-1,p7=-1,p8=-1,p9=-1,p10=-1,
+		p11=-1,p12=-1,p13=-1,p14=-1,p15=-1,p16=-1,p17=-1,p18=-1,p19=-1,p20=-1,
+		p21=-1,p22=-1,p23=-1,p24=-1,p25=-1,p26=-1,p27=-1,p28=-1,p29=-1,p30=-1,
+		p31=-1,p32=-1,p33=-1,p34=-1,p35=-1,p36=-1,p37=-1,p38=-1,p39=-1,p40=-1,
+		p41=-1,p42=-1,p43=-1,p44=-1,p45=-1,p46=-1,p47=-1,p48=-1;
+	}
+	
     // USUAL IOIO SERVICE STUFF
 	@Override
 	public void onStart(Intent intent, int startId) {  
 		
 		// Service has been started
 		super.onStart(intent, startId);
-		Log.d("helloIOIOService.java", "IOIO started service");
+		Log.d(TAG, "IOIO started service");
 		
 		// Send a message
-		broadcastMessage();
+		broadcastVars();
 		
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
@@ -90,41 +90,48 @@ public class HelloIOIOService extends IOIOService {
 	protected IOIOLooper createIOIOLooper() {
 		return new BaseIOIOLooper() {
 			private DigitalOutput led_;
+			private AnalogInput input_;
+			private PwmOutput pwmOutput_;
+			private int pwmCounter = 0;
 
 			@Override
 			protected void setup() throws ConnectionLostException,
 				InterruptedException {
 					led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
+					input_ = ioio_.openAnalogInput(45);
+					pwmOutput_ = ioio_.openPwmOutput(46, 100);
 				}
 
 			@Override
 			public void loop() throws ConnectionLostException,
 				InterruptedException {
-					led_.write(onoff);
-					Thread.sleep(interval);
-					led_.write(onoff);
-					Thread.sleep(interval);
-					onoff = !onoff;
+					
+					// Set PWM out
+					pwmOutput_.setPulseWidth(500+(counter*10));
+				
+					// Async script to flash onboard LED
 					counter++;
-					if(counter>=2) interval = 60;
-					broadcastMessage();
+					if(counter>=(interval/10)){
+						onoff = !onoff;
+						led_.write(onoff);
+						counter=0;
+						broadcastVars();
+					}	
+					Thread.sleep(100);
+
 			}
 		};
 	}
 
     // Broadcast a message to the IOIO plugin
-    private void broadcastMessage(){
-    	// Create an intent and store vars in it
-    	Intent intent = new Intent("speedExceeded");
-    	int currentSpeed = 1, 
-    		latitude = 2, 
-    		longitude=3;
-        intent.putExtra("currentSpeed", currentSpeed);
-        intent.putExtra("latitude", latitude);
-        intent.putExtra("longitude", longitude); 
-        // Send the intent
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    	Log.d("helloIOIOService.java", "IOIO sending message");
+    private void broadcastVars(){
+    	// Which vars to send
+    	broadcastIntent.putExtra("interval", interval);    
+    	broadcastIntent.putExtra("P1", IOIOdata.p5); 
+        
+    	// Send the intent
+        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+        // Log.d("helloIOIOService.java", "IOIO sending message");
     }	
     
     // This service is not bound to an activity
