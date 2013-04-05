@@ -19,7 +19,7 @@ STP.app = function(){
                 "production"
             ],
             "domain"  : {
-                "dev-gareth"    : "http://192.168.0.11/",
+                "dev-gareth"    : "http://192.168.0.18/",
                 "production"    : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
             }
         };
@@ -35,6 +35,10 @@ STP.app = function(){
                 "most scenic route",
                 "least scenic route"
             ],
+            postUrls    : {
+                live : "index.php?q=savelivedevice",
+                data : "index.php?q=savedata"
+            },
             phonename   : "bob",
             domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/",
             postUrls    : {
@@ -44,8 +48,9 @@ STP.app = function(){
 
         // Empty data structure to be sent back to server.
         this.data = {
-            "id"    : 0,
-            "title"    : 0,
+            "id"     : 0,
+            "title"  : 0,
+            "tag"    : "",
             "description" : "",
             "starttime": "",
             "device" : {
@@ -60,7 +65,7 @@ STP.app = function(){
                   "gps"             : [],
                   "image"           : [],
                   "accelerometer"   : [],
-                  "shakeeventyn"   : [],
+                  "shakeevent"   : [],
             }
         };
 
@@ -173,8 +178,7 @@ STP.app = function(){
             mAccel = 0.00,
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
-            uploadedcnt = 0, 
-            posturl = self.domain + "index.php",  
+            uploadedcnt = 0,
 
             documentReadyHandler = function() {
 
@@ -264,6 +268,11 @@ STP.app = function(){
                 UTIL.dropDown( $tags );
                 */
 
+                // Extend config.
+                $.extend(self.config, remoteconfig);
+                // Add phonename (from remote config) to data.
+                self.data.phonename = remoteconfig.phonename;
+
                 // Populate available envs.
                 var $tags = $("#tags");
                 $tags[0].options[0] = new Option("Select a tag...");
@@ -272,11 +281,6 @@ STP.app = function(){
                     $tags[0].options[i+1] = new Option(self.config.activityTags[i]);
                     $tags[0].options[i+1].value = self.config.activityTags[i];
                 };
-
-                // Extend config.
-                $.extend(self.config, remoteconfig);
-                // Add phonename (from remote config) to data.
-                self.data.phonename = remoteconfig.phonename;
 
             },
 
@@ -293,10 +297,8 @@ STP.app = function(){
                     self.data.device.version = device.version;
                     self.data.device.uuid = device.uuid;
                     self.data.description = document.getElementById("description").value;
+                    self.data.tag = $("#tags option:selected").val();
                 
-                    // Configuration. - URL for config shouldn't matter 
-                    // because the config is in GIT and should be the same everywhere.
-
                     // Defaults.
                     self.sensors['geoloc'].set( 'lat', 0 );
                     self.sensors['geoloc'].set( 'lon', 0 );
@@ -307,7 +309,6 @@ STP.app = function(){
                     self.appstate.set( 'uploadedcnt-str', uploadedcnt);
                     self.appstate.set( 'deviceid-name', self.data.device.uuid + " | " + self.config.phonename);
 
-                    //geoLocateUpdate();
 
                     // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
                     // GeoLocate
@@ -351,7 +352,7 @@ STP.app = function(){
                     self.data.points.image.push( imagename );
                     var accel = self.sensors['accel'];
                     self.data.points.accelerometer.push(accel.get( 'combined' ));
-                    self.data.points["shakeeventyn"].push(accel.get( 'shake' ));
+                    self.data.points["shakeevent"].push(accel.get( 'shake' ));
                     
                     // Write data at every interval in case of crash, etc.
                     self.writeData(function() { console.log( "Data written successfully" ); });
@@ -466,7 +467,7 @@ STP.app = function(){
                     lng = geoloc.get( "lon" );
 
                 $.ajax({
-                    url: posturl+"?q=savelivedevice&uuid="+self.data.device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
+                    url: self.config.domain + self.config.postUrls['live'] + "&uuid="+self.data.device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
                     error: function(XMLHttpRequest, textStatus, errorThrown){
                         geoloc.set( "message", "N" );
                     },
@@ -481,29 +482,18 @@ STP.app = function(){
             postFullData = function(){
                 self.appstate.set( 'uploadedcnt-str', uploadedcnt);
                 uploadedcnt++;
-                /*
-                $.ajax({
-                    url: posturl+"?q=savedata&uuid="+device.uuid, 
-                    type:"post",
-                    data: { 
-                        vars:JSON.stringify(self.data)
-                    },
-                    error: function(XMLHttpRequest, textStatus, errorThrown){ 
-                        //appstate.fails++;
-                        var msg = ' e:'+XMLHttpRequest.statusText+" s:"+textStatus+" et:"+errorThrown;
-                        //ui.failed.text('Fails:'+appstate.fails+msg);
-                        //ui.uploadbut.text('Upload Data'); 
-                    },
-                    success: function(data){
-                        //appstate.sub++;
-                        //currentdata.track.uploaded = currentdata.track.points.elapsed.length;
-                        //ui.sub.text('Uploaded:'+appstate.sub+" msg: "+data); 
-                        //ui.points.text('Data: Uploaded: '+currentdata.track.uploaded+" Points: "+currentdata.track.points.elapsed.length);
-                        //ui.uploadbut.text('Upload Data');
-                        //ui.failed.text('Fails:'+appstate.fails);
-                    }
-                });
-                */                 
+
+                var postUrl =  self.config.domain + self.config.postUrls['data'] + "&uuid="+self.data.device.uuid+"&title="+self.data.title;
+                var options = new FileUploadOptions();
+                options.fileKey="data";
+                options.fileName=activityDataEntry.name;
+                options.mimeType="text/json";
+
+                var ft = new FileTransfer();
+                ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function() {
+                        console.log("File transfer successful");
+                    }, fileTransferErrorHandler, options);
+
             },
 
             takePicture = function( filename ) {
@@ -603,6 +593,10 @@ STP.app = function(){
 
             },
 
+            fileTransferErrorHandler = function( error ) {
+                // alert("An error has occurred: Code = " + error.code);
+                console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
+            },
             cameraErrorHandler = function( msg ) {
                 alert( 'Camera error: ' + msg );
             },
