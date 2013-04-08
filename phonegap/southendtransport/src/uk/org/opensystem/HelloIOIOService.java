@@ -43,46 +43,21 @@ import org.apache.cordova.*;
  * For external communications try: https://github.com/nickfox/Update-Android-UI-from-a-Service
  */
 public class HelloIOIOService extends IOIOService {
-	private static String TAG = "IOIOBroadcast";
+	private static String TAG = "IOIOService";
 	private int interval = 1000;
 	private boolean onoff  = false;
 	private int counter = 0;
-	Context thiscontext;
-	
-    @Override
-    public IBinder onBind(Intent intent) {
-    	//Log.d("helloIOIOService.java", "IOIO bound service");
-        //return mBinder;
-        return null;
-    }
-	
-    // Messageing
-    private void speedExceedMessageToActivity() {
-        Intent intent = new Intent("speedExceeded");
-        sendLocationBroadcast(intent);
-    }
-    
-    private void sendLocationBroadcast(Intent intent){
-    	int currentSpeed = 1, latitude = 2, longitude=3;
-        intent.putExtra("currentSpeed", currentSpeed);
-        intent.putExtra("latitude", latitude);
-        intent.putExtra("longitude", longitude); 
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    	Log.d("helloIOIOService.java", "IOIO Intent has broadcast");
-    }	
 
     // USUAL IOIO SERVICE STUFF
 	@Override
 	public void onStart(Intent intent, int startId) {  
-		 
-		thiscontext = getApplicationContext();
 		
 		// Service has been started
 		super.onStart(intent, startId);
 		Log.d("helloIOIOService.java", "IOIO started service");
 		
 		// Send a message
-		sendMessage();
+		broadcastMessage();
 		
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
@@ -118,9 +93,9 @@ public class HelloIOIOService extends IOIOService {
 
 			@Override
 			protected void setup() throws ConnectionLostException,
-					InterruptedException {
-				led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
-			}
+				InterruptedException {
+					led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
+				}
 
 			@Override
 			public void loop() throws ConnectionLostException,
@@ -132,36 +107,29 @@ public class HelloIOIOService extends IOIOService {
 					onoff = !onoff;
 					counter++;
 					if(counter>=2) interval = 60;
-					sendMessage();
+					broadcastMessage();
 			}
 		};
 	}
 
-
-	 // Various methods to get data
-    private void sendMessage()
-    {
+    // Broadcast a message to the IOIO plugin
+    private void broadcastMessage(){
+    	// Create an intent and store vars in it
+    	Intent intent = new Intent("speedExceeded");
+    	int currentSpeed = 1, 
+    		latitude = 2, 
+    		longitude=3;
+        intent.putExtra("currentSpeed", currentSpeed);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude); 
+        // Send the intent
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     	Log.d("helloIOIOService.java", "IOIO sending message");
-    	speedExceedMessageToActivity();
-    	
-        //Intent intent = new Intent("IOIOData");     
-        //intent.putExtra("LED", get_LED());
-        //LocalBroadcastManager.getInstance(activity_name).sendBroadcast();
-        /*
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-        intent.putExtra("MAG", get_MAG());
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-        intent.putExtra("BAR", get_BAR());
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-        intent.putExtra("GYRO", get_GYRO());
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-        intent.putExtra("EULER", get_EULER());
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-        intent.putExtra("GGA", gps_GGA);
-		LocalBroadcastManager.getInstance(activity_name).sendBroadcast(intent);
-		*/
+    }	
+    
+    // This service is not bound to an activity
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
-
-
-
 }
