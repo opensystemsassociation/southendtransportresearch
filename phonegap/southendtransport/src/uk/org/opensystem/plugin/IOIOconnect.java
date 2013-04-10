@@ -4,6 +4,8 @@ import org.apache.cordova.api.CallbackContext;
 import org.apache.cordova.api.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import uk.org.opensystem.HelloIOIOService;
 // import org.json.JSONObject;
 
 import android.util.Log;
@@ -11,7 +13,6 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
-import uk.org.opensystem.HelloIOIOService;
 import android.support.v4.content.LocalBroadcastManager;
 
 /**
@@ -20,7 +21,7 @@ import android.support.v4.content.LocalBroadcastManager;
 public class IOIOconnect extends CordovaPlugin {
 	private Context thisContext;
 	private Intent ioioService;
-  
+	private IOIOdataObj IOIOdata = new IOIOdataObj();
     
     // Handle calls from Javascript
     //@SuppressLint("NewApi")
@@ -44,6 +45,12 @@ public class IOIOconnect extends CordovaPlugin {
         return false;
     }
 
+	// An object to store IOIO vars in
+	private class IOIOdataObj {
+		// Location to store pin values 
+		float a44 = (float) 0.0;
+		float a45 = (float) 0.0;
+	}
     
     // Initialise IOIO service (Called from Javascript)
     private void ioioStartup(CallbackContext callbackContext) {
@@ -77,8 +84,7 @@ public class IOIOconnect extends CordovaPlugin {
     private void ioioIsAlive(String msg, CallbackContext callbackContext) {
         //String message = "Led: "+ioioObj.onoff+" Status: "+ioioObj.status;
     	//sendBroadcast(Intent intent);
-    	
-        String message = "Alive";
+        String message = "A45:"+IOIOdata.a45;
         ioioSwitchOnoff();
         if (message != null && message.length() > 0) { 
             callbackContext.success(message);
@@ -99,13 +105,12 @@ public class IOIOconnect extends CordovaPlugin {
         */
     }
 
-    // Receive massage from the IOIO device
+    // Receive message from the IOIO device
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
     	@Override
     	public void onReceive(Context context, Intent intent) {
-    		int interval = intent.getIntExtra("interval", 0);
-    		//  React to local broadcast message
-    		//Log.d("southendtransport.java", "IOIO plugin got message: "+interval);
+    		IOIOdata.a44 = intent.getFloatExtra("a44", (float) 0.0);
+    		IOIOdata.a45 = intent.getFloatExtra("a45", (float) 0.0);
     	}
     };
 

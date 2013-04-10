@@ -525,7 +525,7 @@ STP.app = function(){
 
             // IOIO: Start communications with the IOIO board
             ioioStart = function() {
-                var interval = 1000;
+                var interval = 2000;
                 var ioioInterval = window.setInterval(ioioUpdate, interval);
                 ioioStartup();
             },

@@ -20,6 +20,8 @@ import ioio.lib.api.PwmOutput;
 import android.content.Intent;
 import org.json.JSONObject;
 import uk.org.opensystem.R;
+import uk.org.opensystem.R.drawable;
+
 import org.apache.cordova.*;
 
 
@@ -40,12 +42,8 @@ public class HelloIOIOService extends IOIOService {
 	// An object to store IOIO vars in
 	private class IOIOdataObj {
 		// Location to store pin values 
-		int 
-		p1=-1,p2=-1,p3=-1,p4=-1,p5=-1,p6=-1,p7=-1,p8=-1,p9=-1,p10=-1,
-		p11=-1,p12=-1,p13=-1,p14=-1,p15=-1,p16=-1,p17=-1,p18=-1,p19=-1,p20=-1,
-		p21=-1,p22=-1,p23=-1,p24=-1,p25=-1,p26=-1,p27=-1,p28=-1,p29=-1,p30=-1,
-		p31=-1,p32=-1,p33=-1,p34=-1,p35=-1,p36=-1,p37=-1,p38=-1,p39=-1,p40=-1,
-		p41=-1,p42=-1,p43=-1,p44=-1,p45=-1,p46=-1,p47=-1,p48=-1;
+		float a45; 
+		float a44; 
 	}
 	
     // USUAL IOIO SERVICE STUFF
@@ -90,45 +88,125 @@ public class HelloIOIOService extends IOIOService {
 	protected IOIOLooper createIOIOLooper() {
 		return new BaseIOIOLooper() {
 			private DigitalOutput led_;
-			private AnalogInput input_;
-			private PwmOutput pwmOutput_;
-			private int pwmCounter = 0;
-
+			private AnalogInput a45_;
+			private AnalogInput a44_;
+			private PwmOutput a46_;
+			private tuneManager tuneObj_ = new tuneManager();
+			private eventChecker lightEventObj = new eventChecker();
+			private eventChecker gsrEventObj = new eventChecker();
+			boolean lightEvent;
+			
+			// Setup inputs & outputs
 			@Override
 			protected void setup() throws ConnectionLostException,
 				InterruptedException {
 					led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
-					input_ = ioio_.openAnalogInput(45);
-					pwmOutput_ = ioio_.openPwmOutput(46, 100);
+					// Setup analog inputs
+					a44_ = ioio_.openAnalogInput(44);
+					a45_ = ioio_.openAnalogInput(45);
+					// Setup analog outputs
+					a46_ = ioio_.openPwmOutput(46, 100);
 				}
-
+			
+			// Read and write inputs and outputs
 			@Override
-			public void loop() throws ConnectionLostException,
-				InterruptedException {
+			public void loop() throws ConnectionLostException, InterruptedException {
 					
-					// Set PWM out
-					pwmOutput_.setPulseWidth(500+(counter*10));
+				// Read input and set PWM out
+				IOIOdata.a45 = a45_.read(); // light sensor
+				IOIOdata.a44 = a44_.read(); // GSR sensor
 				
-					// Async script to flash onboard LED
-					counter++;
-					if(counter>=(interval/10)){
-						onoff = !onoff;
-						led_.write(onoff);
-						counter=0;
-						broadcastVars();
-					}	
-					Thread.sleep(100);
-
+				// Check if there has been a rapid change of event
+				lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
+				if(lightEvent==true){
+					tuneObj_.timeout = 30;
+				}
+				
+				// Set the
+				a46_.setDutyCycle( tuneObj_.checkMe() );
+				
+				broadcastVars();
+				
+				// Async script to flash on-board LED
+				counter++;
+				if(counter>=(interval/100)){
+					onoff = !onoff;
+					led_.write(onoff);
+					counter=0;
+					/*
+					Log.d("helloIOIOService.java", "IOIO "+ 
+							"a44:"+IOIOdata.a44+" "+
+							"a45:"+IOIOdata.a45
+					); */
+				}	
+				Thread.sleep(100);
+				
 			}
+			
 		};
+	}
+
+	// Check if a variable has 'significantly' jumped specified by range
+	private class eventChecker {
+		private double lastVal = -1.0f; // Store the last available value
+		private boolean event = false;
+		
+		private boolean checkEvent(double val, double range){
+			double plus = val-lastVal;
+			double minus = lastVal-val;
+			if(plus>=range || minus>=range){
+				Log.d("helloIOIOService.java", "IOIO "+"plus:"+plus+" val:"+val );
+				event = true;
+			}else{
+				event = false;
+			}
+			lastVal = val;
+			return event; 
+		}
+	}
+
+	// Remove noise from a variable list
+	private class smoothVar {
+		private int test = 1;
+		private double getVar(){
+			return 0.0;
+		}
+	}
+	
+	// A class to manage random generation of a float over time
+	private class tuneManager {
+		// Setup vars
+		private int setpwm = 0;
+		private int interval = 5;
+		private float rand = 0.0f;
+		private int timer = 30; 
+		private int timeout = 30;		
+		// Calculate random note & interval
+		private float checkMe() {
+			timer--;
+			if(timer>0){	
+				setpwm++;	
+				if(setpwm>=interval){
+					rand = (float) Math.random();		
+					setpwm = 0;
+					float rand2 = (float) Math.random();
+					interval = (int) (rand2*6)+2;
+				}
+			}else{
+				rand = 0.0f;
+				timer = 0;
+			}
+			return rand;			
+		}
 	}
 
     // Broadcast a message to the IOIO plugin
     private void broadcastVars(){
-    	// Which vars to send
-    	broadcastIntent.putExtra("interval", interval);    
-    	broadcastIntent.putExtra("P1", IOIOdata.p5); 
-        
+    	
+    	// Which vars to send  
+    	broadcastIntent.putExtra("a45", IOIOdata.a45); 
+    	broadcastIntent.putExtra("a44", IOIOdata.a44); 
+
     	// Send the intent
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
         // Log.d("helloIOIOService.java", "IOIO sending message");
