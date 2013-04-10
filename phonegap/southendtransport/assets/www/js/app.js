@@ -617,13 +617,13 @@ STP.app = function(){
                 console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
             },
             cameraErrorHandler = function( msg ) {
-                alert( 'Camera error: ' + msg );
+                console.log( 'Camera error: ' + msg );
             },
             writeErrorHandler = function( msg ) {
-                alert( 'Write error:' + String(msg) );
+                console.log( 'Write error:' + String(msg) );
             },
             fsErrorHandler = function( msg ) {
-                alert( 'Filesystem error:' + String(msg) );
+                console.log( 'Filesystem error:' + String(msg) );
             },
             geoErrorHandler = function( msg ) {
                 if( isDevice ) {
