@@ -73,6 +73,7 @@ STP.app = function(){
 
         this.initialise = function() {
 
+            //console.log(UTIL.getDistance(51.50746, -0.12257, 51.81626, -0.8147));
             console.log('init');
             // Other document events: 'load', 'deviceready', 'offline', and 'online'.
             if (navigator.userAgent.match(/(Android)/)) {
@@ -197,7 +198,13 @@ STP.app = function(){
             deviceReadyHandler = function() {
 
                 initialise();
-                getConfig();
+                if( navigator.connection.type !== Connection.NONE
+                        && navigator.connection.type !== Connection.UNKNOWN ) {
+                    getConfig();
+                } else {
+                    populateTrackTags();
+                }
+
                 if( ! isDevice ){
                     parseConfig();
                 }
@@ -268,6 +275,12 @@ STP.app = function(){
                 self.data.phonename = remoteconfig.phonename;
                 self.appstate.set( 'devicename', remoteconfig.phonename);
 
+                populateTrackTags(); 
+
+            },
+
+            populateTrackTags = function() {
+
                 // Populate available envs.
                 var $tags = $("#tags");
                 $tags[0].options[0] = new Option("Select a tag...");
@@ -295,8 +308,8 @@ STP.app = function(){
                     self.data.tag = $("#tags option:selected").val();
                 
                     // Defaults.
-                    self.sensors['geoloc'].set( 'lat', null );
-                    self.sensors['geoloc'].set( 'lon', null );
+                    self.sensors['geoloc'].set( 'lat', -1 );
+                    self.sensors['geoloc'].set( 'lon', -1 );
                     self.sensors['geoloc'].set( 'count', 0 );
                     self.sensors['accel'].set( 'shake', 0 );
                     self.sensors['ioio'].set( 'ioio-str', 0 );
@@ -429,19 +442,25 @@ STP.app = function(){
             geoSuccessHandler = function( position ) {
 
                 var geoloc = self.sensors['geoloc'],
-                    distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000, // in metres.
-                    maxBusSpeed = 80*1000, // Metres per hour.
-                    maxDistInInterval = (maxBusSpeed/60/60/1000)*self.config.geoUpdateInterval;
-                console.log("DISTANCE: " + distance + " - Max:  " + maxDistInInterval);
+                    distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000; // in metres.
+                console.log("DISTANCE: " + distance );
 
+                // Add distance to model.
                 geoloc.set( 'dist', distance );
-                // only update the GPS count if we have recieved new coords
-                if( geoloc.get('lat') == null || ( distance < maxDistInInterval
-                        && ( position.coords.latitude != geoloc.get( 'lat') 
-                        && position.coords.longitude!=geoloc.get( 'lon') ) ) ) {
-                   geoloc.set( 'lat', position.coords.latitude );
+                if( geoloc.get('lat') == -1 && geoloc.get('lon') == -1 ){
+
+                    geoloc.set( 'lat', position.coords.latitude );
                     geoloc.set( 'lon', position.coords.longitude );
                     geoloc.set( 'count', geoloc.get('count')+1 ); 
+
+                } else if( /* distance < maxDistInInterval 
+                        && */ ( position.coords.latitude != geoloc.get( 'lat') 
+                        && position.coords.longitude != geoloc.get( 'lon') ) ) {
+                            // only update the GPS count if we have recieved new coords
+                            geoloc.set( 'lat', position.coords.latitude );
+                            geoloc.set( 'lon', position.coords.longitude );
+                            geoloc.set( 'count', geoloc.get('count')+1 ); 
+
                 }
 
             },

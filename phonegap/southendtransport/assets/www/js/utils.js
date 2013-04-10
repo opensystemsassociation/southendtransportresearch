@@ -16,8 +16,8 @@ UTIL.DataBinder = function( object_id ) {
         message = object_id + ":change";
 
     // Listen to change events on elements with the data-binding attribute and proxy
-    // them to the PubSub, so that the change is "broadcasted" to all connected objects
     jQuery( document ).on( "change", "[data-" + data_attr + "]", function( evt ) {
+    // them to the PubSub, so that the change is "broadcasted" to all connected objects
         var $input = jQuery( this );
 
         pubSub.trigger( message, [ $input.data( data_attr ), $input.val() ] );
@@ -61,6 +61,17 @@ UTIL.dropDown = function( $container ) {
     })
 }
 
+UTIL.getDistance = function (lat1,lon1,lat2,lon2) {
+    var R = 6371; // Radius of the earth in km
+    var d = Math.acos(Math.sin(UTIL.deg2rad(lat1))*Math.sin(UTIL.deg2rad(lat2)) + 
+            Math.cos(UTIL.deg2rad(lat1))*Math.cos(UTIL.deg2rad(lat2)) *
+            Math.cos(UTIL.deg2rad(lon2-lon1))) * R;
+    return d;
+}
+
+UTIL.deg2rad = function(deg) {
+    return deg * (Math.PI/180)
+}
 
 /*
  * Extending native  prototypes
