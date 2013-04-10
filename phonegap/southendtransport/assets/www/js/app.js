@@ -16,10 +16,12 @@ STP.app = function(){
             "override" : "null",
             "envs" : [
                 "dev-gareth",
+                "dev-gareth-local",
                 "production"
             ],
             "domain"  : {
                 "dev-gareth"    : "http://garethfoote.co.uk/osa/stp/maps/",
+                "dev-gareth-local"    : "http://192.168.1.75/leaflet-map-deep/",
                 "production"    : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
             }
         };
@@ -40,10 +42,7 @@ STP.app = function(){
                 data : "index.php?q=savedata"
             },
             phonename   : "bob",
-            domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/",
-            postUrls    : {
-                data : ""
-            }
+            domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
         };
 
         // Empty data structure to be sent back to server.
@@ -197,7 +196,6 @@ STP.app = function(){
                 initialise();
                 getConfig();
                 if( ! isDevice ){
-                    console.log("Is it on device: " + isDevice);
                     parseConfig();
                 }
 
@@ -261,8 +259,10 @@ STP.app = function(){
 
             parseConfig = function( remoteconfig ) {
 
+                console.log( JSON.stringify(self.config) );
                 // Extend config.
                 $.extend(self.config, remoteconfig);
+                console.log( JSON.stringify(self.config.postUrls) );
                 // Add phonename (from remote config) to data.
                 self.data.phonename = remoteconfig.phonename;
                 self.appstate.set( 'devicename', remoteconfig.phonename);
@@ -508,10 +508,17 @@ STP.app = function(){
                 options.fileName=activityDataEntry.name;
                 options.mimeType="text/json";
 
-console.log( "HELLO!!!" + postUrl ); 
+
+                var reader = new FileReader();
+                reader.onloadend = function(evt) {
+                    console.log("read success");
+                    console.log(evt.target.result);
+                };
+                reader.readAsText(activityDataEntry);
+
                 var ft = new FileTransfer();
-                ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function() {
-                        console.log("File transfer successful");
+                ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function(r) {
+                        console.log("File transfer successful:" + r.response);
                     }, fileTransferErrorHandler, options);
 
             },
