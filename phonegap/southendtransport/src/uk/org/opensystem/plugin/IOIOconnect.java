@@ -48,8 +48,10 @@ public class IOIOconnect extends CordovaPlugin {
 	// An object to store IOIO vars in
 	private class IOIOdataObj {
 		// Location to store pin values 
-		float a44 = (float) 0.0;
-		float a45 = (float) 0.0;
+		float a44 = (float) 0.0; // Light
+		int a45event = 0;
+		int a45eventStored = 0;
+		float a45 = (float) 0.0; // GSR
 	}
     
     // Initialise IOIO service (Called from Javascript)
@@ -84,7 +86,8 @@ public class IOIOconnect extends CordovaPlugin {
     private void ioioIsAlive(String msg, CallbackContext callbackContext) {
         //String message = "Led: "+ioioObj.onoff+" Status: "+ioioObj.status;
     	//sendBroadcast(Intent intent);
-        String message = "A45:"+IOIOdata.a45;
+        String message = "l["+IOIOdata.a45eventStored+"]:"+IOIOdata.a45+" gsr:"+IOIOdata.a44;
+        IOIOdata.a45eventStored = 0;
         ioioSwitchOnoff();
         if (message != null && message.length() > 0) { 
             callbackContext.success(message);
@@ -111,6 +114,10 @@ public class IOIOconnect extends CordovaPlugin {
     	public void onReceive(Context context, Intent intent) {
     		IOIOdata.a44 = intent.getFloatExtra("a44", (float) 0.0);
     		IOIOdata.a45 = intent.getFloatExtra("a45", (float) 0.0);
+    		IOIOdata.a45event = intent.getIntExtra("a45event", 0);
+    		if(IOIOdata.a45eventStored==0 && IOIOdata.a45event==1){
+    			IOIOdata.a45eventStored = 1;
+    		}
     	}
     };
 

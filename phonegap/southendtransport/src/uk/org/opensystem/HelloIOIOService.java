@@ -45,6 +45,10 @@ public class HelloIOIOService extends IOIOService {
 		// Location to store pin values 
 		float a45; 
 		float a44; 
+		int a45event = 0;
+		private void resetEvents(){
+			IOIOdata.a45event = 0;
+		}
 	}
 	
     // USUAL IOIO SERVICE STUFF
@@ -53,7 +57,6 @@ public class HelloIOIOService extends IOIOService {
 		
 		// Service has been started
 		super.onStart(intent, startId);
-		Log.d(TAG, "IOIO started service");
 		
 		// Send a message
 		//broadcastVars();
@@ -61,6 +64,7 @@ public class HelloIOIOService extends IOIOService {
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
 		if(loadinterval>=0){ threadInterval = loadinterval; }
+		Log.d(TAG, "IOIO started service. ThreadInt:"+threadInterval);
 	        
 		// Native IOIO stuff
 		NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -114,13 +118,15 @@ public class HelloIOIOService extends IOIOService {
 			public void loop() throws ConnectionLostException, InterruptedException {
 					
 				// Read input and set PWM out
-				IOIOdata.a45 = a45_.read(); // light sensor
 				IOIOdata.a44 = a44_.read(); // GSR sensor
+				IOIOdata.a45 = a45_.read(); // light sensor
 				
 				// Check if there has been a rapid change of event
 				lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
+				IOIOdata.resetEvents();
 				if(lightEvent==true){
-					tuneObj_.playTune(5);
+					tuneObj_.playTune(2);
+					IOIOdata.a45event = 1;
 				}
 				
 				// Set the pwm output
@@ -133,15 +139,10 @@ public class HelloIOIOService extends IOIOService {
 				
 				// Async script to flash on-board LED
 				counter++;
-				if(counter>=(ledinterval/100)){
+				if(counter>=(threadInterval)){
 					onoff = !onoff;
 					led_.write(onoff);
 					counter=0;
-					/*
-					Log.d("helloIOIOService.java", "IOIO "+ 
-							"a44:"+IOIOdata.a44+" "+
-							"a45:"+IOIOdata.a45
-					); */
 				}	
 				Thread.sleep(threadInterval);
 				
@@ -180,7 +181,7 @@ public class HelloIOIOService extends IOIOService {
 	private class tuneManager {
 		// Setup vars
 		private int setpwm = 0;
-		private int interval = 5;
+		private int interval = 2;
 		private float rand = 0.0f;
 		private int timer = 30; 
 		private int timeout = 30;		
@@ -193,7 +194,7 @@ public class HelloIOIOService extends IOIOService {
 					rand = (float) Math.random();		
 					setpwm = 0;
 					float rand2 = (float) Math.random();
-					interval = (int) (rand2*6)+2;
+					//interval = (int) (rand2*6)+2;
 				}
 			}else{
 				rand = 0.0f;
@@ -212,8 +213,9 @@ public class HelloIOIOService extends IOIOService {
     	
     	// Which vars to send  
     	broadcastIntent.putExtra("a45", IOIOdata.a45); 
+    	broadcastIntent.putExtra("a45event", IOIOdata.a45event);
     	broadcastIntent.putExtra("a44", IOIOdata.a44); 
-
+    			
     	// Send the intent
         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
         // Log.d("helloIOIOService.java", "IOIO sending message");
