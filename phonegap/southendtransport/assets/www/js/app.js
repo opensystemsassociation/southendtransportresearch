@@ -47,6 +47,15 @@ STP.app = function(){
             domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
         };
 
+        this.IOIOdata = {
+            "ldrEvent": 0,
+            "ldrVal": 0,
+            "ldrStored": 0,
+            "gsrEvent": 0,
+            "gsrVal": 0,
+            "gsrStored": 0,
+        };
+
         // Empty data structure to be sent back to server.
         this.data = {
             "id"     : 0,
@@ -68,6 +77,10 @@ STP.app = function(){
                   "image"           : [],
                   "accelerometer"   : [],
                   "shakeevent"   : [],
+                  "IOIOlight"   : [],
+                  "IOIOlightevent"   : [],
+                  "IOIOgsr"   : [],
+                  "IOIOgsrevent"   : [],
             }
         };
 
@@ -365,6 +378,14 @@ STP.app = function(){
                     var accel = self.sensors['accel'];
                     points.accelerometer.push(accel.get( 'combined' ));
                     points.shakeevent.push(accel.get( 'shake' ));
+
+                    // Add IOIO values to the track
+                    points.IOIOlight.push( self.IOIOdata.ldrVal );
+                    points.IOIOlightevent.push( self.IOIOdata.ldrEvent );
+                    points.IOIOgsr.push( self.IOIOdata.gsrVal );
+                    points.IOIOgsrevent.push( self.IOIOdata.ldrEvent );
+                    
+
                     // Reset accel shake.
                     accel.set('shake', 0);
 
@@ -584,10 +605,20 @@ STP.app = function(){
 
             // IOIO: Grab data from the ioio board if its available
             ioioUpdate = function(){
-                var params = ["Sent from .js!!"];
+                var params = [""];
                 STP.plugins.ioioIsAlive(params,
                     function(result) {
-                        self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
+                        var IOIOdata = jQuery.parseJSON( result );
+
+                        // Create strings of data to save intervae
+                        self.IOIOdata.gsr =  IOIOdata.a44;
+                        self.IOIOdata.gsrEvent =  IOIOdata.a44Event;
+                        self.IOIOdata.ldr = IOIOdata.a45;
+                        self.IOIOdata.ldrEvent = IOIOdata.a45Event;
+
+                        var msg = "gsr["+IOIOdata.a44Event+"]:"+IOIOdata.a44+" "+
+                                  "ldr["+IOIOdata.a45Event+"]:"+IOIOdata.a45;
+                        self.sensors['ioio'].set('ioio-str', 'IOIO: '+msg);
                         //console.log("IOIO Sucess: "+result);
                     }, 
                     function(err){
@@ -595,6 +626,16 @@ STP.app = function(){
                     }
                 );
             },
+
+            ioioGenSTring = function(str, newval){
+                /*
+                if(str==""){
+                    str = newval;
+                }else{
+                    str = str+","+newval;
+                }*/
+                return newval;
+            }
 
             // File system accessed.
             fsSuccessHandler = function( fileSystem ) {
