@@ -115,24 +115,21 @@ public class HelloIOIOService extends IOIOService {
 					
 				// Read input and set PWM out
 				IOIOdata.a45 = a45_.read(); // light sensor
-				//IOIOdata.a44 = a44_.read(); // GSR sensor
+				IOIOdata.a44 = a44_.read(); // GSR sensor
 				
 				// Check if there has been a rapid change of event
-				//lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
+				lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
 				if(lightEvent==true){
-					tuneObj_.timeout = 30;
+					tuneObj_.playTune(5);
 				}
 				
 				// Set the pwm output
-				//a46_.setDutyCycle( tuneObj_.checkMe() );
-				a46_.setDutyCycle((float) 0.0 );
+				a46_.setDutyCycle( tuneObj_.checkMe() );
+				//a46_.setDutyCycle((float) 0.0 );
 				
-				//broadcastVars();
+				broadcastVars();
 				
-				Log.d("helloIOIOService.java", "IOIO "+ 
-						"a44:"+IOIOdata.a44+" "+
-						"a45:"+IOIOdata.a45
-				); 
+				//Log.d("helloIOIOService.java", "IOIO "+ "a44:"+IOIOdata.a44+" "+"a45:"+IOIOdata.a45); 
 				
 				// Async script to flash on-board LED
 				counter++;
@@ -157,12 +154,11 @@ public class HelloIOIOService extends IOIOService {
 	private class eventChecker {
 		private double lastVal = -1.0f; // Store the last available value
 		private boolean event = false;
-		
 		private boolean checkEvent(double val, double range){
 			double plus = val-lastVal;
 			double minus = lastVal-val;
 			if(plus>=range || minus>=range){
-				Log.d("helloIOIOService.java", "IOIO "+"plus:"+plus+" val:"+val );
+				Log.d(TAG, "IOIO event"+"plus:"+plus+" val:"+val+" gsr:"+IOIOdata.a44 );
 				event = true;
 			}else{
 				event = false;
@@ -191,7 +187,7 @@ public class HelloIOIOService extends IOIOService {
 		// Calculate random note & interval
 		private float checkMe() {
 			timer--;
-			if(timer>0){	
+			if(timer>=0){	
 				setpwm++;	
 				if(setpwm>=interval){
 					rand = (float) Math.random();		
@@ -204,6 +200,10 @@ public class HelloIOIOService extends IOIOService {
 				timer = 0;
 			}
 			return rand;			
+		}
+		// Reset the timer soa a tune is played
+		private void playTune(int newTimeout) {
+			timer = newTimeout;
 		}
 	}
 

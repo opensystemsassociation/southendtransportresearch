@@ -508,6 +508,7 @@ STP.app = function(){
                 options.fileName=activityDataEntry.name;
                 options.mimeType="text/json";
 
+console.log( "HELLO!!!" + postUrl ); 
                 var ft = new FileTransfer();
                 ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function() {
                         console.log("File transfer successful");
