@@ -443,7 +443,7 @@ STP.app = function(){
 
                 var geoloc = self.sensors['geoloc'],
                     distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000; // in metres.
-                console.log("DISTANCE: " + distance );
+                // console.log("DISTANCE: " + distance );
 
                 // Add distance to model.
                 geoloc.set( 'dist', distance );

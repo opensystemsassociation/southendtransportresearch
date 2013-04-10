@@ -159,9 +159,9 @@ h1 {
 }
 
 .start, .exit {
-    height: 40px;
+    height: 80px;
     width: 90%;
-    margin: 0 auto;
+    margin: 20px auto;
     font-size: 18px;
 }
 
@@ -175,7 +175,7 @@ h1 {
 
 .description {
     width: 60%;
-    margin: 0 auto;
+    margin: 0 10px;;
     height: 40px;
     float: left;
 }
