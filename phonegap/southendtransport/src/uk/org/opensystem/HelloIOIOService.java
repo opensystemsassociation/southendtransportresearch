@@ -33,10 +33,11 @@ import org.apache.cordova.*;
  */
 public class HelloIOIOService extends IOIOService {
 	private static String TAG = "helloIOIOService.java";
-	private int interval = 500;
+	private int ledinterval = 500;
+	private int threadInterval = 1000;
 	private boolean onoff  = false;
 	private int counter = 0;
-	private Intent broadcastIntent = new Intent("speedExceeded");
+	private Intent broadcastIntent = new Intent("returnIOIOdata");
 	private IOIOdataObj IOIOdata = new IOIOdataObj();
 	
 	// An object to store IOIO vars in
@@ -55,11 +56,11 @@ public class HelloIOIOService extends IOIOService {
 		Log.d(TAG, "IOIO started service");
 		
 		// Send a message
-		broadcastVars();
+		//broadcastVars();
 		
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
-		if(loadinterval>=0){ interval = loadinterval; }
+		if(loadinterval>=0){ threadInterval = loadinterval; }
 	        
 		// Native IOIO stuff
 		NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -114,22 +115,28 @@ public class HelloIOIOService extends IOIOService {
 					
 				// Read input and set PWM out
 				IOIOdata.a45 = a45_.read(); // light sensor
-				IOIOdata.a44 = a44_.read(); // GSR sensor
+				//IOIOdata.a44 = a44_.read(); // GSR sensor
 				
 				// Check if there has been a rapid change of event
-				lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
+				//lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
 				if(lightEvent==true){
 					tuneObj_.timeout = 30;
 				}
 				
-				// Set the
-				a46_.setDutyCycle( tuneObj_.checkMe() );
+				// Set the pwm output
+				//a46_.setDutyCycle( tuneObj_.checkMe() );
+				a46_.setDutyCycle((float) 0.0 );
 				
-				broadcastVars();
+				//broadcastVars();
+				
+				Log.d("helloIOIOService.java", "IOIO "+ 
+						"a44:"+IOIOdata.a44+" "+
+						"a45:"+IOIOdata.a45
+				); 
 				
 				// Async script to flash on-board LED
 				counter++;
-				if(counter>=(interval/100)){
+				if(counter>=(ledinterval/100)){
 					onoff = !onoff;
 					led_.write(onoff);
 					counter=0;
@@ -139,7 +146,7 @@ public class HelloIOIOService extends IOIOService {
 							"a45:"+IOIOdata.a45
 					); */
 				}	
-				Thread.sleep(100);
+				Thread.sleep(threadInterval);
 				
 			}
 			

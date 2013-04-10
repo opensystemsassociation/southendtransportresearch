@@ -57,13 +57,13 @@ public class IOIOconnect extends CordovaPlugin {
     	// Initialise the service variables and start it it up
     	thisContext = this.cordova.getActivity().getApplicationContext();
     	ioioService = new Intent(thisContext, HelloIOIOService.class);
-        ioioService.putExtra("loadinterval", 800); // Set LED flash interval
+        ioioService.putExtra("loadinterval", 1000); // Set thread interval
         thisContext.startService(ioioService);
         
         // Setup a method to receive messages broadcast from the IOIO
         LocalBroadcastManager.getInstance(thisContext).registerReceiver(
                 mMessageReceiver, 
-                new IntentFilter("speedExceeded")
+                new IntentFilter("returnIOIOdata")
         );
         
         // Send a message back to the Javascript call
