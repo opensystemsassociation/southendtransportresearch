@@ -551,7 +551,7 @@ STP.app = function(){
 
             // IOIO: Startup the main IOIO thread
             ioioStartup = function(){
-                var params = [];
+                var params = [1000]; // [threadsleep]
                 STP.plugins.ioioStartup(params,
                     function(result) {
                         self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
