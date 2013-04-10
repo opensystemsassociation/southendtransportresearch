@@ -30,6 +30,8 @@ STP.app = function(){
         this.config = {
             tickInterval: 1000, // millisecs
             recordInterval : 5,
+            geoUpdateInterval : 500,
+            sendCurrPosInterval : 10000,
             stopAfter : 120*60, // 2 hours maximum.
             activityTags : [
                 "favourite route",
@@ -71,6 +73,7 @@ STP.app = function(){
             "points" : {
                   "elapsed"         : [],
                   "gps"             : [],
+                  "dist"            : [],
                   "image"           : [],
                   "accelerometer"   : [],
                   "shakeevent"   : [],
@@ -83,6 +86,7 @@ STP.app = function(){
 
         this.initialise = function() {
 
+            //console.log(UTIL.getDistance(51.50746, -0.12257, 51.81626, -0.8147));
             console.log('init');
             // Other document events: 'load', 'deviceready', 'offline', and 'online'.
             if (navigator.userAgent.match(/(Android)/)) {
@@ -207,7 +211,13 @@ STP.app = function(){
             deviceReadyHandler = function() {
 
                 initialise();
-                getConfig();
+                if( navigator.connection.type !== Connection.NONE
+                        && navigator.connection.type !== Connection.UNKNOWN ) {
+                    getConfig();
+                } else {
+                    populateTrackTags();
+                }
+
                 if( ! isDevice ){
                     parseConfig();
                 }
@@ -272,13 +282,17 @@ STP.app = function(){
 
             parseConfig = function( remoteconfig ) {
 
-                console.log( JSON.stringify(self.config) );
                 // Extend config.
                 $.extend(self.config, remoteconfig);
-                console.log( JSON.stringify(self.config.postUrls) );
                 // Add phonename (from remote config) to data.
                 self.data.phonename = remoteconfig.phonename;
                 self.appstate.set( 'devicename', remoteconfig.phonename);
+
+                populateTrackTags(); 
+
+            },
+
+            populateTrackTags = function() {
 
                 // Populate available envs.
                 var $tags = $("#tags");
@@ -307,8 +321,8 @@ STP.app = function(){
                     self.data.tag = $("#tags option:selected").val();
                 
                     // Defaults.
-                    self.sensors['geoloc'].set( 'lat', 0 );
-                    self.sensors['geoloc'].set( 'lon', 0 );
+                    self.sensors['geoloc'].set( 'lat', -1 );
+                    self.sensors['geoloc'].set( 'lon', -1 );
                     self.sensors['geoloc'].set( 'count', 0 );
                     self.sensors['accel'].set( 'shake', 0 );
                     self.sensors['ioio'].set( 'ioio-str', 0 );
@@ -320,9 +334,9 @@ STP.app = function(){
 
                     // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
                     // GeoLocate
-                    gpsTid = setInterval(geoLocateUpdate, 500);
+                    gpsTid = setInterval(geoLocateUpdate, self.config.geoUpdateInterval);
                     // Send current position back to server.
-                    posTid = setInterval(sendcurrentpos, 10000);
+                    posTid = setInterval(sendcurrentpos, self.config.sendCurrPosInterval);
                     sendcurrentpos();
                     // Upload current data track to the server.
                     //posTid = setInterval(postFullData, 10000);
@@ -358,6 +372,7 @@ STP.app = function(){
                     var points = self.data.points;
                     points.elapsed.push( self.time.get('duration') );
                     points.gps.push([ self.sensors['geoloc'].get( 'lat' ), self.sensors['geoloc'].get( 'lon' ) ]);
+                    points.dist.push(self.sensors['geoloc'].get( 'dist' ));
                     var imagename = self.time.get( 'now' ) + '.jpg';
                     points.image.push( imagename );
                     var accel = self.sensors['accel'];
@@ -447,12 +462,26 @@ STP.app = function(){
 
             geoSuccessHandler = function( position ) {
 
-                var geoloc = self.sensors['geoloc'];
-                // only update the GPS count if we have recieved new coords
-                if(position.coords.latitude!=geoloc.get( 'lat') && position.coords.longitude!=geoloc.get( 'lon')) {
-                   geoloc.set( 'lat', position.coords.latitude );
+                var geoloc = self.sensors['geoloc'],
+                    distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000; // in metres.
+                console.log("DISTANCE: " + distance );
+
+                // Add distance to model.
+                geoloc.set( 'dist', distance );
+                if( geoloc.get('lat') == -1 && geoloc.get('lon') == -1 ){
+
+                    geoloc.set( 'lat', position.coords.latitude );
                     geoloc.set( 'lon', position.coords.longitude );
                     geoloc.set( 'count', geoloc.get('count')+1 ); 
+
+                } else if( /* distance < maxDistInInterval 
+                        && */ ( position.coords.latitude != geoloc.get( 'lat') 
+                        && position.coords.longitude != geoloc.get( 'lon') ) ) {
+                            // only update the GPS count if we have recieved new coords
+                            geoloc.set( 'lat', position.coords.latitude );
+                            geoloc.set( 'lon', position.coords.longitude );
+                            geoloc.set( 'count', geoloc.get('count')+1 ); 
+
                 }
 
             },
@@ -528,14 +557,6 @@ STP.app = function(){
                 options.fileKey="data";
                 options.fileName=activityDataEntry.name;
                 options.mimeType="text/json";
-
-
-                var reader = new FileReader();
-                reader.onloadend = function(evt) {
-                    console.log("read success");
-                    console.log(evt.target.result);
-                };
-                reader.readAsText(activityDataEntry);
 
                 var ft = new FileTransfer();
                 ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function(r) {
