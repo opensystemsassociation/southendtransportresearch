@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import uk.org.opensystem.HelloIOIOService;
+import uk.org.opensystem.IOIOdataObj;
 // import org.json.JSONObject;
 
 import android.util.Log;
@@ -44,15 +45,6 @@ public class IOIOconnect extends CordovaPlugin {
         }
         return false;
     }
-
-	// An object to store IOIO vars in
-	private class IOIOdataObj {
-		// Location to store pin values 
-		float a44 = (float) 0.0; // Light
-		int a45event = 0;
-		int a45eventStored = 0;
-		float a45 = (float) 0.0; // GSR
-	}
     
     // Initialise IOIO service (Called from Javascript)
     private void ioioStartup(CallbackContext callbackContext) {
@@ -84,11 +76,14 @@ public class IOIOconnect extends CordovaPlugin {
     
     // Echo strings back to javascript
     private void ioioIsAlive(String msg, CallbackContext callbackContext) {
-        //String message = "Led: "+ioioObj.onoff+" Status: "+ioioObj.status;
-    	//sendBroadcast(Intent intent);
-        String message = "l["+IOIOdata.a45eventStored+"]:"+IOIOdata.a45+" gsr:"+IOIOdata.a44;
-        IOIOdata.a45eventStored = 0;
-        ioioSwitchOnoff();
+
+    	// Grab a JSON string ready to send to the .js callback
+        String message = IOIOdata.getjson();
+        
+        // Reset all stored events
+        IOIOdata.resetStoredEvents();
+        
+        // Send message back to javascript
         if (message != null && message.length() > 0) { 
             callbackContext.success(message);
         } else {
@@ -97,22 +92,13 @@ public class IOIOconnect extends CordovaPlugin {
     }
     
 
-    // Switch
-    private void ioioSwitchOnoff() {
-        /*
-        if(ioioObj.onoff == false){
-            ioioObj.onoff = true;
-        }else{
-            ioioObj.onoff = false;
-        }
-        */
-    }
-
     // Receive message from the IOIO device
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
     	@Override
     	public void onReceive(Context context, Intent intent) {
+    		// GSR sensor
     		IOIOdata.a44 = intent.getFloatExtra("a44", (float) 0.0);
+    		// Light sensor
     		IOIOdata.a45 = intent.getFloatExtra("a45", (float) 0.0);
     		IOIOdata.a45event = intent.getIntExtra("a45event", 0);
     		if(IOIOdata.a45eventStored==0 && IOIOdata.a45event==1){

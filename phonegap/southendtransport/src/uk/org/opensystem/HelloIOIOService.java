@@ -13,15 +13,14 @@ import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
 import ioio.lib.api.AnalogInput;
-import ioio.lib.api.DigitalOutput;
-import ioio.lib.api.IOIO;
+//import ioio.lib.api.DigitalOutput;
 import ioio.lib.api.PwmOutput;
 
 import android.content.Intent;
-import org.json.JSONObject;
+//import org.json.JSONObject;
 import uk.org.opensystem.R;
 import uk.org.opensystem.R.drawable;
-
+import uk.org.opensystem.IOIOdataObj;
 import org.apache.cordova.*;
 
 
@@ -39,17 +38,6 @@ public class HelloIOIOService extends IOIOService {
 	private int counter = 0;
 	private Intent broadcastIntent = new Intent("returnIOIOdata");
 	private IOIOdataObj IOIOdata = new IOIOdataObj();
-	
-	// An object to store IOIO vars in
-	private class IOIOdataObj {
-		// Location to store pin values 
-		float a45; 
-		float a44; 
-		int a45event = 0;
-		private void resetEvents(){
-			IOIOdata.a45event = 0;
-		}
-	}
 	
     // USUAL IOIO SERVICE STUFF
 	@Override
@@ -119,27 +107,28 @@ public class HelloIOIOService extends IOIOService {
 					
 				// Read input and set PWM out
 				IOIOdata.a44 = a44_.read(); // GSR sensor
-				IOIOdata.a45 = a45_.read(); // light sensor
+				IOIOdata.a44event = 0;
 				
-				// Check if there has been a rapid change of event
+				// Light sensor: Check if there has been a rapid change of event
+				IOIOdata.a45 = a45_.read();
 				lightEvent = lightEventObj.checkEvent(IOIOdata.a45, 0.05);
-				IOIOdata.resetEvents();
 				if(lightEvent==true){
 					tuneObj_.playTune(2);
 					IOIOdata.a45event = 1;
 				}
-				
-				// Set the pwm output
 				a46_.setDutyCycle( tuneObj_.checkMe() );
-				//a46_.setDutyCycle((float) 0.0 );
 				
+				// Send all recorded vars to IOIO plugin
 				broadcastVars();
+				
+				// Reset all event vars
+				IOIOdata.resetEvents();
 				
 				//Log.d("helloIOIOService.java", "IOIO "+ "a44:"+IOIOdata.a44+" "+"a45:"+IOIOdata.a45); 
 				
 				// Async script to flash on-board LED
 				counter++;
-				if(counter>=(threadInterval)){
+				if(counter>=(threadInterval/2)){
 					onoff = !onoff;
 					led_.write(onoff);
 					counter=0;
