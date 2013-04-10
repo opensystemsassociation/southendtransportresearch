@@ -19,7 +19,7 @@ STP.app = function(){
                 "production"
             ],
             "domain"  : {
-                "dev-gareth"    : "http://192.168.0.11/",
+                "dev-gareth"    : "http://garethfoote.co.uk/osa/stp/maps/",
                 "production"    : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
             }
         };
@@ -35,6 +35,10 @@ STP.app = function(){
                 "most scenic route",
                 "least scenic route"
             ],
+            postUrls    : {
+                live : "index.php?q=savelivedevice",
+                data : "index.php?q=savedata"
+            },
             phonename   : "bob",
             domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/",
             postUrls    : {
@@ -44,8 +48,9 @@ STP.app = function(){
 
         // Empty data structure to be sent back to server.
         this.data = {
-            "id"    : 0,
-            "title"    : 0,
+            "id"     : 0,
+            "title"  : 0,
+            "tag"    : "",
             "description" : "",
             "starttime": "",
             "device" : {
@@ -60,7 +65,7 @@ STP.app = function(){
                   "gps"             : [],
                   "image"           : [],
                   "accelerometer"   : [],
-                  "shakeeventyn"   : [],
+                  "shakeevent"   : [],
             }
         };
 
@@ -122,7 +127,7 @@ STP.app = function(){
             activityDataEntry.createWriter(function( writer ) {
 
                     writer.onwrite = successHandler;
-                    writer.write( JSON.stringify( self.data ) );
+                    writer.write( JSON.stringify( { track : self.data } ) );
 
                 }, writeErrorHandler );
 
@@ -173,8 +178,7 @@ STP.app = function(){
             mAccel = 0.00,
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
-            uploadedcnt = 0, 
-            posturl = self.domain + "index.php",  
+            uploadedcnt = 0,
 
             documentReadyHandler = function() {
 
@@ -204,7 +208,7 @@ STP.app = function(){
                 // Populate available envs.
                 var $select = $("#environments");
                 $select[0].options[0] = new Option("Select an environment");
-                $select[0].options[0].value = "Select an environment";
+                $select[0].options[0].value = "select";
                 for (var i = 0; i < self.localconfig.envs.length; i++) {
                     $select[0].options[i+1] = new Option(self.localconfig.envs[i]);
                     $select[0].options[i+1].value = self.localconfig.envs[i];
@@ -217,6 +221,9 @@ STP.app = function(){
                 var onChangeHandler = function() {
                     $("option:selected", $select).each(function () {
                         var env = $(this).val();
+                        if( env === "select" ) {
+                            return;
+                        }
                         setDomain( env );
                         getConfig();
                     });
@@ -251,18 +258,14 @@ STP.app = function(){
                         });
 
             },
-            
+
             parseConfig = function( remoteconfig ) {
 
-                /*
-                var $tags = $("#tags"),
-                    $ul = $(".list-parent", $tags),
-                    li = "<li><a href='#'>%s</a></li>";
-                for (var i = 0; i < self.config.activityTags.length; i++) {
-                    $ul.append(li.replace("%s", self.config.activityTags[i]));
-                }
-                UTIL.dropDown( $tags );
-                */
+                // Extend config.
+                $.extend(self.config, remoteconfig);
+                // Add phonename (from remote config) to data.
+                self.data.phonename = remoteconfig.phonename;
+                self.appstate.set( 'devicename', remoteconfig.phonename);
 
                 // Populate available envs.
                 var $tags = $("#tags");
@@ -272,11 +275,6 @@ STP.app = function(){
                     $tags[0].options[i+1] = new Option(self.config.activityTags[i]);
                     $tags[0].options[i+1].value = self.config.activityTags[i];
                 };
-
-                // Extend config.
-                $.extend(self.config, remoteconfig);
-                // Add phonename (from remote config) to data.
-                self.data.phonename = remoteconfig.phonename;
 
             },
 
@@ -293,21 +291,19 @@ STP.app = function(){
                     self.data.device.version = device.version;
                     self.data.device.uuid = device.uuid;
                     self.data.description = document.getElementById("description").value;
+                    self.data.tag = $("#tags option:selected").val();
                 
-                    // Configuration. - URL for config shouldn't matter 
-                    // because the config is in GIT and should be the same everywhere.
-
                     // Defaults.
                     self.sensors['geoloc'].set( 'lat', 0 );
                     self.sensors['geoloc'].set( 'lon', 0 );
                     self.sensors['geoloc'].set( 'count', 0 );
+                    self.sensors['accel'].set( 'shake', 0 );
                     self.sensors['ioio'].set( 'ioio-str', 0 );
                     self.time.set( 'start', -1 );
                     self.time.set( 'last-record', -1 );
                     self.appstate.set( 'uploadedcnt-str', uploadedcnt);
-                    self.appstate.set( 'deviceid-name', self.data.device.uuid + " | " + self.config.phonename);
-
-                    //geoLocateUpdate();
+                    self.appstate.set( 'deviceid', self.data.device.uuid);
+                    self.appstate.set( 'devicename', self.config.phonename);
 
                     // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
                     // GeoLocate
@@ -344,18 +340,25 @@ STP.app = function(){
                 if ( self.time.get( 'last-record') < 0 ||
                     duration-lastRecord  >= self.config.recordInterval ) {
 
-                    // Record data now!
-                    self.data.points.elapsed.push( self.time.get('duration') );
-                    self.data.points.gps.push([ self.sensors['geoloc'].get( 'lat' ), self.sensors['geoloc'].get( 'lon' ) ]);
+                    // Record data now! This involves taking values out of 
+                    // respective models and putting into self.data.
+                    var points = self.data.points;
+                    points.elapsed.push( self.time.get('duration') );
+                    points.gps.push([ self.sensors['geoloc'].get( 'lat' ), self.sensors['geoloc'].get( 'lon' ) ]);
                     var imagename = self.time.get( 'now' ) + '.jpg';
-                    self.data.points.image.push( imagename );
+                    points.image.push( imagename );
                     var accel = self.sensors['accel'];
-                    self.data.points.accelerometer.push(accel.get( 'combined' ));
-                    self.data.points["shakeeventyn"].push(accel.get( 'shake' ));
-                    
+                    points.accelerometer.push(accel.get( 'combined' ));
+                    points.shakeevent.push(accel.get( 'shake' ));
+                    // Reset accel shake.
+                    accel.set('shake', 0);
+
                     // Write data at every interval in case of crash, etc.
-                    self.writeData(function() { console.log( "Data written successfully" ); });
-                    // Might as well upload it as well
+                    self.writeData(function() { 
+                        console.log( "Data written successfully" );
+                    });
+
+                    // Might as well upload it as well.
                     postFullData();
 
                     // If camera is not busy take picture.
@@ -395,27 +398,34 @@ STP.app = function(){
             },
 
             geoLocateStart = function() {
+
                 //watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
                 watchID=navigator.geolocation.watchPosition(
                     geoSuccessHandler, 
                     geoErrorHandler, 
                     {enableHighAccuracy:true}
                 );
+
             },
 
             geoLocateUpdate = function() {
+
                 watchID=navigator.geolocation.getCurrentPosition(
                     geoSuccessHandler, 
                     geoErrorHandler 
                     //,{enableHighAccuracy:true}
                 );
+
             },
 
             geoLocateStop = function() {
+
                 navigator.geolocation.clearWatch(watchID);
+
             },
 
             geoSuccessHandler = function( position ) {
+
                 var geoloc = self.sensors['geoloc'];
                 // only update the GPS count if we have recieved new coords
                 if(position.coords.latitude!=geoloc.get( 'lat') && position.coords.longitude!=geoloc.get( 'lon')) {
@@ -423,15 +433,18 @@ STP.app = function(){
                     geoloc.set( 'lon', position.coords.longitude );
                     geoloc.set( 'count', geoloc.get('count')+1 ); 
                 }
+
             },
 
             accelerometerStart = function() {
+
                 var options = {};
                 options.frequency = 1000;
                 accelerationWatch = navigator.accelerometer.watchAcceleration(
                         accelUpdateHandler, function(ex) {
                             console.log("accel fail (" + ex.name + ": " + ex.message + ")");
                         }, options);
+
             },
 
             accelUpdateHandler = function(a) {
@@ -440,24 +453,29 @@ STP.app = function(){
                 accel.set( 'x', a.x );
                 accel.set( 'y', a.y );
                 accel.set( 'z', a.z );
-                accel.set( 'combined', a.x+":"+a.y+":"+a.z );
+                accel.set( 'combined', (a.x).toFixed(4)+":"+(a.y).toFixed(4)+":"+(a.z).toFixed(4) );
 
-                var delta = 0.00;
+                var delta = 0.00,
+                    shakeThreshold = 1.75; // This indicates a shake.
                 
                 mAccelLast = mAccelCurrent;
                 mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
                 delta = mAccelCurrent - mAccelLast;
                 mAccel = mAccel * 0.9 + delta; // perform low-cut filter
       
-                if( mAccel > 1.75 ) { 
-                    accel.set( 'shake', "true" );
-                } else {
-                    accel.set( 'shake', "false" );
+                // Accel interval is shorted than tick interval. This means
+                // a shake could happen and then be reset to 0 between tick
+                // intervals. Soooo, we only set shake value if new value is
+                // greater than previous AND we reset shake to 0 at 
+                // tick interval thus resetting. This retains the greatest
+                // shake value over shakeThreshold since the last tick.
+                if( mAccel > shakeThreshold 
+                        && mAccel-shakeThreshold > accel.get('shake') ) {
+                        accel.set( 'shake', (mAccel-shakeThreshold).toFixed(4) );
                 }
-                
+
             },
-            
-            
+
             // Send current position to the server:
             sendcurrentpos = function (){
 
@@ -466,7 +484,7 @@ STP.app = function(){
                     lng = geoloc.get( "lon" );
 
                 $.ajax({
-                    url: posturl+"?q=savelivedevice&uuid="+self.data.device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
+                    url: self.config.domain + self.config.postUrls['live'] + "&uuid="+self.data.device.uuid+"&la="+lat+"&lo="+lng+'&dn='+device.name,
                     error: function(XMLHttpRequest, textStatus, errorThrown){
                         geoloc.set( "message", "N" );
                     },
@@ -475,35 +493,26 @@ STP.app = function(){
                         console.log( "send successful" );
                     }
                 });
+
             },
 
             // Post data to server
             postFullData = function(){
+
                 self.appstate.set( 'uploadedcnt-str', uploadedcnt);
                 uploadedcnt++;
-                /*
-                $.ajax({
-                    url: posturl+"?q=savedata&uuid="+device.uuid, 
-                    type:"post",
-                    data: { 
-                        vars:JSON.stringify(self.data)
-                    },
-                    error: function(XMLHttpRequest, textStatus, errorThrown){ 
-                        //appstate.fails++;
-                        var msg = ' e:'+XMLHttpRequest.statusText+" s:"+textStatus+" et:"+errorThrown;
-                        //ui.failed.text('Fails:'+appstate.fails+msg);
-                        //ui.uploadbut.text('Upload Data'); 
-                    },
-                    success: function(data){
-                        //appstate.sub++;
-                        //currentdata.track.uploaded = currentdata.track.points.elapsed.length;
-                        //ui.sub.text('Uploaded:'+appstate.sub+" msg: "+data); 
-                        //ui.points.text('Data: Uploaded: '+currentdata.track.uploaded+" Points: "+currentdata.track.points.elapsed.length);
-                        //ui.uploadbut.text('Upload Data');
-                        //ui.failed.text('Fails:'+appstate.fails);
-                    }
-                });
-                */                 
+
+                var postUrl =  self.config.domain + self.config.postUrls['data'] + "&uuid="+self.data.device.uuid+"&title="+self.data.title;
+                var options = new FileUploadOptions();
+                options.fileKey="data";
+                options.fileName=activityDataEntry.name;
+                options.mimeType="text/json";
+
+                var ft = new FileTransfer();
+                ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function() {
+                        console.log("File transfer successful");
+                    }, fileTransferErrorHandler, options);
+
             },
 
             takePicture = function( filename ) {
@@ -603,6 +612,10 @@ STP.app = function(){
 
             },
 
+            fileTransferErrorHandler = function( error ) {
+                // alert("An error has occurred: Code = " + error.code);
+                console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
+            },
             cameraErrorHandler = function( msg ) {
                 alert( 'Camera error: ' + msg );
             },
