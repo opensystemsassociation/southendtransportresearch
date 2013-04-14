@@ -73,6 +73,8 @@ STP.app = function(){
             "points" : {
                   "elapsed"         : [],
                   "gps"             : [],
+                  "gps_accuracy"            : [],
+                  "gps_timestamp"            : [],
                   "dist"            : [],
                   "image"           : [],
                   "accelerometer"   : [],
@@ -195,6 +197,7 @@ STP.app = function(){
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
             uploadedcnt = 0,
+            kalman = new STP.KalmanLatLong(3),
 
             documentReadyHandler = function() {
 
@@ -372,6 +375,8 @@ STP.app = function(){
                     var points = self.data.points;
                     points.elapsed.push( self.time.get('duration') );
                     points.gps.push([ self.sensors['geoloc'].get( 'lat' ), self.sensors['geoloc'].get( 'lon' ) ]);
+                    points.gps_accuracy.push( self.sensors['geoloc'].get( 'accuracy' ));
+                    points.gps_timestamp.push( self.sensors['geoloc'].get( 'timestamp' ));
                     points.dist.push(self.sensors['geoloc'].get( 'dist' ));
                     var imagename = self.time.get( 'now' ) + '.jpg';
                     points.image.push( imagename );
@@ -433,30 +438,13 @@ STP.app = function(){
 
             },
 
-            geoLocateStart = function() {
-
-                //watchID = navigator.geolocation.watchPosition(geoSuccessHandler, geoErrorHandler);
-                watchID=navigator.geolocation.watchPosition(
-                    geoSuccessHandler, 
-                    geoErrorHandler, 
-                    {enableHighAccuracy:true}
-                );
-
-            },
-
             geoLocateUpdate = function() {
 
                 watchID=navigator.geolocation.getCurrentPosition(
                     geoSuccessHandler, 
                     geoErrorHandler 
-                    //,{enableHighAccuracy:true}
+                    ,{enableHighAccuracy:true}
                 );
-
-            },
-
-            geoLocateStop = function() {
-
-                navigator.geolocation.clearWatch(watchID);
 
             },
 
@@ -466,21 +454,27 @@ STP.app = function(){
                     distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000; // in metres.
                 // console.log("DISTANCE: " + distance );
 
+                kalman.process( position.coords.latitude, position.coords.longitude, position.coords.accuracy, position.timestamp );
+
                 // Add distance to model.
                 geoloc.set( 'dist', distance );
                 if( geoloc.get('lat') == -1 && geoloc.get('lon') == -1 ){
 
-                    geoloc.set( 'lat', position.coords.latitude );
-                    geoloc.set( 'lon', position.coords.longitude );
+                    geoloc.set( 'lat', kalman.getLat() );
+                    geoloc.set( 'lon', kalman.getLong() );
+                    geoloc.set( 'accuracy', position.coords.accuracy );
+                    geoloc.set( 'timestamp', position.timestamp );
                     geoloc.set( 'count', geoloc.get('count')+1 ); 
 
                 } else if( /* distance < maxDistInInterval 
                         && */ ( position.coords.latitude != geoloc.get( 'lat') 
                         && position.coords.longitude != geoloc.get( 'lon') ) ) {
                             // only update the GPS count if we have recieved new coords
-                            geoloc.set( 'lat', position.coords.latitude );
-                            geoloc.set( 'lon', position.coords.longitude );
-                            geoloc.set( 'count', geoloc.get('count')+1 ); 
+                            geoloc.set( 'lat', kalman.getLat() );
+                            geoloc.set( 'lon', kalman.getLong() );
+                            geoloc.set( 'accuracy', position.coords.accuracy );
+                            geoloc.set( 'timestamp', position.timestamp );
+                            geoloc.set( 'count', geoloc.get('count')+1 );
 
                 }
 
