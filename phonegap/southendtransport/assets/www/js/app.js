@@ -380,10 +380,12 @@ STP.app = function(){
                     points.shakeevent.push(accel.get( 'shake' ));
 
                     // Add IOIO values to the track
-                    points.IOIOlight.push( self.IOIOdata.ldrVal );
+                    points.IOIOlight.push(0.33333);
+                    //points.IOIOlight.push( self.IOIOdata.ldrVal );
                     points.IOIOlightevent.push( self.IOIOdata.ldrEvent );
                     points.IOIOgsr.push( self.IOIOdata.gsrVal );
                     points.IOIOgsrevent.push( self.IOIOdata.ldrEvent );
+                    console.log("IOIO : ldrE:"+ self.IOIOdata.ldrEvent + "val:"+self.IOIOdata.ldrVal);
                     
 
                     // Reset accel shake.
@@ -610,11 +612,12 @@ STP.app = function(){
                     function(result) {
                         var IOIOdata = jQuery.parseJSON( result );
 
-                        // Create strings of data to save intervae
+                        // Create strings of data to save 
                         self.IOIOdata.gsr =  IOIOdata.a44;
                         self.IOIOdata.gsrEvent =  IOIOdata.a44Event;
                         self.IOIOdata.ldr = IOIOdata.a45;
                         self.IOIOdata.ldrEvent = IOIOdata.a45Event;
+
 
                         var msg = "gsr["+IOIOdata.a44Event+"]:"+IOIOdata.a44+" "+
                                   "ldr["+IOIOdata.a45Event+"]:"+IOIOdata.a45;
