@@ -8,6 +8,7 @@ Data Structure
     {
     	"track" : {
             "title": "A track name",
+            "tag": "Describe this track"
             "author": "Your Name", 
             "starttime": "000",
             "endtime": "000",
