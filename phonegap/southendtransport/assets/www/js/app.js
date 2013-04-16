@@ -90,6 +90,7 @@ STP.app = function(){
 
             //console.log(UTIL.getDistance(51.50746, -0.12257, 51.81626, -0.8147));
             console.log('init');
+
             // Other document events: 'load', 'deviceready', 'offline', and 'online'.
             if (navigator.userAgent.match(/(Android)/)) {
                 isDevice = true;
@@ -152,6 +153,11 @@ STP.app = function(){
         };
 
         this.startActivity = function() {
+            var description = document.getElementById("description");
+            if(description.value==""){
+                alert("Please enter a track description");
+                return;
+            }
 
             // Set start time.
             var now = new Date();
@@ -384,6 +390,8 @@ STP.app = function(){
                     points.accelerometer.push(accel.get( 'combined' ));
                     points.shakeevent.push(accel.get( 'shake' ));
 
+                    self.data.description = document.getElementById("description").value;
+                    
                     // Add IOIO values to the track
                     points.IOIOlight.push(0.33333);
                     //points.IOIOlight.push( self.IOIOdata.ldrVal );

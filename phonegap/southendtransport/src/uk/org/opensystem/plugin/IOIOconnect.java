@@ -58,8 +58,7 @@ public class IOIOconnect extends CordovaPlugin {
         LocalBroadcastManager.getInstance(thisContext).registerReceiver(
                 mMessageReceiver, 
                 new IntentFilter("returnIOIOdata")
-        );
-        
+        );     
         // Send a message back to the Javascript call
         Log.d("helloIOIOService.java", "IOIO Started from the plugin"); 
         callbackContext.success("Started IOIO service");
