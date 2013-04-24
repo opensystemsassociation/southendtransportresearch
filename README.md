@@ -12,6 +12,7 @@ Data Structure
             "author": "Your Name", 
             "starttime": "000",
             "endtime": "000",
+            "imagerotate":0,
             "device" : {
             	"name": "???",   
                 "cordova": "???",
@@ -21,7 +22,7 @@ Data Structure
             },
             "points" : {
                   "elapsed" 		: [ [1],[6],[11],[16] ],
-                  "gps" 			: [ [lat,lng],[lat,lng],[lat,lng],[lat,lng] ],
+                  "gps" 		: [ [lat,lng],[lat,lng],[lat,lng],[lat,lng] ],
                   "imagefile" 		: ["name2.jpg",0,0,"name2.jpg"],
                   "accelerometer" 	: [ [x,y,z], [x,y,z], 0, [x-y-z] ],
                   "shakeevent" 	: [0,1,0,0]
