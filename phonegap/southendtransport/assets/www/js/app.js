@@ -47,15 +47,6 @@ STP.app = function(){
             domain      : "http://transport.yoha.co.uk/sites/transport.yoha.co.uk/leaflet-multi-map/"
         };
 
-        this.IOIOdata = {
-            "ldrEvent": 0,
-            "ldrVal": 0,
-            "ldrStored": 0,
-            "gsrEvent": 0,
-            "gsrVal": 0,
-            "gsrStored": 0,
-        };
-
         // Empty data structure to be sent back to server.
         this.data = {
             "id"     : 0,
@@ -73,8 +64,8 @@ STP.app = function(){
             "points" : {
                   "elapsed"         : [],
                   "gps"             : [],
-                  "gps_accuracy"            : [],
-                  "gps_timestamp"            : [],
+                  "gps_accuracy"    : [],
+                  "gps_timestamp"   : [],
                   "dist"            : [],
                   "image"           : [],
                   "accelerometer"   : [],
@@ -202,6 +193,8 @@ STP.app = function(){
             mAccel = 0.00,
             mAccelCurrent = 9.80665,
             mAccelLast = 9.80665,
+            IOIOgsrStored = 0,
+            IOIOlightStored = 0,
             uploadedcnt = 0,
             kalman = new STP.KalmanLatLong(3),
 
@@ -265,16 +258,13 @@ STP.app = function(){
             },
 
             setDomain = function( env ) {
-
                 self.config.domain = self.localconfig.domain[env];
-
             },
 
             getConfig = function() {
 
                 $("#environments").blur().empty();
                 $(".environment").hide();
-
                 var deviceConfig = "config/" + self.data.device.uuid + ".json";
                 $.getJSON(self.config.domain + deviceConfig,
                         function( remoteconfig ) {
@@ -296,7 +286,6 @@ STP.app = function(){
                 // Add phonename (from remote config) to data.
                 self.data.phonename = remoteconfig.phonename;
                 self.appstate.set( 'devicename', remoteconfig.phonename);
-
                 populateTrackTags(); 
 
             },
@@ -335,6 +324,10 @@ STP.app = function(){
                     self.sensors['geoloc'].set( 'count', 0 );
                     self.sensors['accel'].set( 'shake', 0 );
                     self.sensors['ioio'].set( 'ioio-str', 0 );
+                    self.sensors['ioio'].set( 'ioio-gsr', 0 );
+                    self.sensors['ioio'].set( 'ioio-gsrevent', 0 );
+                    self.sensors['ioio'].set( 'ioio-ldr', 0 );
+                    self.sensors['ioio'].set( 'ioio-ldrevent', 0 );
                     self.time.set( 'start', -1 );
                     self.time.set( 'last-record', -1 );
                     self.appstate.set( 'uploadedcnt-str', uploadedcnt);
@@ -344,15 +337,18 @@ STP.app = function(){
                     // START AYSYNCHRONOS DATA/SENSOR/UPLOAD POLLING
                     // GeoLocate
                     gpsTid = setInterval(geoLocateUpdate, self.config.geoUpdateInterval);
+
                     // Send current position back to server.
                     posTid = setInterval(sendcurrentpos, self.config.sendCurrPosInterval);
                     sendcurrentpos();
+
                     // Upload current data track to the server.
                     //posTid = setInterval(postFullData, 10000);
 
                     // Get the accelerometer going
                     accelerometerStart();
-                    // And grab those sensors!
+
+                    // And lets grab those IOIO sensors!
                     ioioStart();
                 }
 
@@ -373,8 +369,7 @@ STP.app = function(){
 
                 // If recordInterval has elapsed since last record
                 // then record data/take picture.
-                if ( self.time.get( 'last-record') < 0 ||
-                    duration-lastRecord  >= self.config.recordInterval ) {
+                if ( self.time.get( 'last-record') < 0 || duration-lastRecord  >= self.config.recordInterval ) {
 
                     // Record data now! This involves taking values out of 
                     // respective models and putting into self.data.
@@ -387,27 +382,27 @@ STP.app = function(){
                     var imagename = self.time.get( 'now' ) + '.jpg';
                     points.image.push( imagename );
                     var accel = self.sensors['accel'];
+                    var shake = accel.get( 'shake' );
                     points.accelerometer.push(accel.get( 'combined' ));
-                    points.shakeevent.push(accel.get( 'shake' ));
-
+                    points.shakeevent.push(shake);
                     self.data.description = document.getElementById("description").value;
                     
                     // Add IOIO values to the track
-                    points.IOIOlight.push(0.33333);
-                    //points.IOIOlight.push( self.IOIOdata.ldrVal );
-                    points.IOIOlightevent.push( self.IOIOdata.ldrEvent );
-                    points.IOIOgsr.push( self.IOIOdata.gsrVal );
-                    points.IOIOgsrevent.push( self.IOIOdata.ldrEvent );
-                    console.log("IOIO : ldrE:"+ self.IOIOdata.ldrEvent + "val:"+self.IOIOdata.ldrVal);
-                    
+                    points.IOIOlight.push( self.sensors['ioio'].get( 'ioio-ldr') );
+                    points.IOIOlightevent.push( self.sensors['ioio'].get( 'ioio-ldrevent') );
+                    points.IOIOgsr.push( self.sensors['ioio'].get( 'ioio-gsr') );
+                    points.IOIOgsrevent.push( self.sensors['ioio'].get( 'ioio-gsrevent') );   
 
-                    // Reset accel shake.
+                    // Trigger the IOIO if there has been an acceleromter event
+                    if(shake!=1) ioioSendMessage("a37_playpwm");
+
+                    // Reset stored events
                     accel.set('shake', 0);
+                    IOIOgsrStored = 0,
+                    IOIOlightStored = 0;
 
                     // Write data at every interval in case of crash, etc.
-                    self.writeData(function() { 
-                        console.log( "Data written successfully" );
-                    });
+                    self.writeData(function() { console.log( "Data written successfully" ); });
 
                     // Might as well upload it as well.
                     postFullData();
@@ -435,21 +430,21 @@ STP.app = function(){
             },
 
             updateTime = function() {
-
                 var now = new Date();
                 self.time.set( 'now', Math.round( now.getTime()/1000 ) );
-
                 self.time.set( 'now-str', now.toUTCString() );
                 // Determine activity duration if its started.
                 if ( self.time.get('start') > 0) {
                     var duration = self.time.get( 'now' ) - self.time.get( 'start' );
                     self.time.set( 'duration', duration );
                 }
-
             },
 
+            /* =======================================================
+             *  GPS COORDINATES
+             * ======================================================= 
+             */
             geoLocateUpdate = function() {
-
                 watchID=navigator.geolocation.getCurrentPosition(
                     geoSuccessHandler, 
                     geoErrorHandler 
@@ -457,15 +452,11 @@ STP.app = function(){
                 );
 
             },
-
             geoSuccessHandler = function( position ) {
-
                 var geoloc = self.sensors['geoloc'],
                     distance = UTIL.getDistance(geoloc.get('lat'), geoloc.get('lon'), position.coords.latitude, position.coords.longitude)*1000; // in metres.
                 // console.log("DISTANCE: " + distance );
-
                 kalman.process( position.coords.latitude, position.coords.longitude, position.coords.accuracy, position.timestamp );
-
                 // Add distance to model.
                 geoloc.set( 'dist', distance );
                 if( geoloc.get('lat') == -1 && geoloc.get('lon') == -1 ){
@@ -487,31 +478,28 @@ STP.app = function(){
                             geoloc.set( 'count', geoloc.get('count')+1 );
 
                 }
-
             },
 
+            /* =======================================================
+             *  ACCELEROMETER
+             * ======================================================= 
+             */
             accelerometerStart = function() {
-
                 var options = {};
                 options.frequency = 1000;
                 accelerationWatch = navigator.accelerometer.watchAcceleration(
                         accelUpdateHandler, function(ex) {
                             console.log("accel fail (" + ex.name + ": " + ex.message + ")");
                         }, options);
-
             },
-
             accelUpdateHandler = function(a) {
-
                 var accel = self.sensors['accel'];
                 accel.set( 'x', a.x );
                 accel.set( 'y', a.y );
                 accel.set( 'z', a.z );
                 accel.set( 'combined', (a.x).toFixed(4)+":"+(a.y).toFixed(4)+":"+(a.z).toFixed(4) );
-
                 var delta = 0.00,
                     shakeThreshold = 1.75; // This indicates a shake.
-                
                 mAccelLast = mAccelCurrent;
                 mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
                 delta = mAccelCurrent - mAccelLast;
@@ -530,9 +518,30 @@ STP.app = function(){
 
             },
 
+            /* =======================================================
+             *  CAMERA
+             * ======================================================= 
+             */
+            takePicture = function( filename ) {
+                var params = [
+                    activityDirEntry.fullPath.replace('file://',''),
+                    filename
+                ];
+                cameraBusy = true;
+                STP.plugins.takePicture(params,
+                    function( result ) {
+                        console.log( result.action +" (success)", result.filename );
+                        cameraBusy = false;
+                    }, cameraErrorHandler);
+            },
+
+
+            /* =======================================================
+             *  UPLOAD DATA TO SERVER
+             * ======================================================= 
+             */
             // Send current position to the server:
             sendcurrentpos = function (){
-
                 var geoloc = self.sensors['geoloc'],                
                     lat = geoloc.get( "lat" ),
                     lng = geoloc.get( "lon" );
@@ -547,15 +556,11 @@ STP.app = function(){
                         console.log( "send successful" );
                     }
                 });
-
             },
-
             // Post data to server
             postFullData = function(){
-
                 self.appstate.set( 'uploadedcnt-str', uploadedcnt);
                 uploadedcnt++;
-
                 var postUrl =  self.config.domain + self.config.postUrls['data'] + "&uuid="+self.data.device.uuid+"&title="+self.data.title;
                 var options = new FileUploadOptions();
                 options.fileKey="data";
@@ -566,36 +571,22 @@ STP.app = function(){
                 ft.upload(activityDataEntry.fullPath, encodeURI( postUrl ), function(r) {
                         console.log("File transfer successful:" + r.response);
                     }, fileTransferErrorHandler, options);
-
             },
 
-            takePicture = function( filename ) {
 
-                var params = [
-                    activityDirEntry.fullPath.replace('file://',''),
-                    filename
-                ];
-
-                cameraBusy = true;
-
-                STP.plugins.takePicture(params,
-                    function( result ) {
-                        console.log( result.action +" (success)", result.filename );
-                        cameraBusy = false;
-                    }, cameraErrorHandler);
-
-            },
-
-            // IOIO: Start communications with the IOIO board
+            /* =======================================================
+             *  IOIO MANGEMENT
+             * ======================================================= 
+             */
+            // IOIO: Start async communications with the IOIO board
             ioioStart = function() {
-                var interval = 2000;
-                var ioioInterval = window.setInterval(ioioUpdate, interval);
+                //var ioioMsgInterval = window.setInterval(ioioSendMessage, 5000); // trigger IOIO data every 5 secs
+                var ioioInterval = window.setInterval(ioioGrabData, 500); // Grab IOIO data every 1/2 sec
                 ioioStartup();
             },
-
             // IOIO: Startup the main IOIO thread
             ioioStartup = function(){
-                var params = [1000]; // [threadsleep]
+                var params = [250]; // [threadsleep]
                 STP.plugins.ioioStartup(params,
                     function(result) {
                         self.sensors['ioio'].set('ioio-str', 'IOIO: '+result);
@@ -606,23 +597,25 @@ STP.app = function(){
                     }
                 );
             },
-
             // IOIO: Grab data from the ioio board if its available
-            ioioUpdate = function(){
+            ioioGrabData = function(){
                 var params = [""];
-                STP.plugins.ioioIsAlive(params,
+                STP.plugins.ioioGrabData(params,
                     function(result) {
-                        var IOIOdata = jQuery.parseJSON( result );
+                        // Grab the data and save it
+                        var IOIOdata = jQuery.parseJSON( result );    
+                        self.sensors['ioio'].set( 'ioio-ldr', IOIOdata.a44 );
+                        self.sensors['ioio'].set( 'ioio-ldrevent', IOIOdata.a44Event );         
+                        self.sensors['ioio'].set( 'ioio-gsr', IOIOdata.a43 );
+                        self.sensors['ioio'].set( 'ioio-gsrevent', IOIOdata.a43Event );
+                        
+                        // Store the event until it is saved
+                        if(IOIOdata.a43Event==1) self.IOIOgsrStored = 1;
+                        if(IOIOdata.a44Event==1) self.IOIOlightStored = 1;
 
-                        // Create strings of data to save 
-                        self.IOIOdata.gsr =  IOIOdata.a44;
-                        self.IOIOdata.gsrEvent =  IOIOdata.a44Event;
-                        self.IOIOdata.ldr = IOIOdata.a45;
-                        self.IOIOdata.ldrEvent = IOIOdata.a45Event;
-
-
-                        var msg = "gsr["+IOIOdata.a44Event+"]:"+IOIOdata.a44+" "+
-                                  "ldr["+IOIOdata.a45Event+"]:"+IOIOdata.a45;
+                        // Create strings of data to report 
+                        var msg = "ldr["+IOIOdata.a44Event+"]:"+IOIOdata.a44+" "+
+                                  "gsr["+IOIOdata.a43Event+"]:"+IOIOdata.a43;
                         self.sensors['ioio'].set('ioio-str', 'IOIO: '+msg);
                         //console.log("IOIO Sucess: "+result);
                     }, 
@@ -631,20 +624,37 @@ STP.app = function(){
                     }
                 );
             },
+            // IOIO: Send a message to IOIO board
+            ioioSendMessage = function(msg){
+                if(msg==null) msg = "a37_playpwm";
+                /* Message options: 
+                    The default is for the IOIO service to trigger
+                    an output. If stopautotriggers is sent as a message, the javascript controls outputs
+                    msg = "stopautotriggers";   // Stop auto triggers 
+                    msg = "startautotriggers";  // Start auto triggers 
+                    msg = "a46_playpwm"         // Make pin a46 play a randomly generated sequence
+                    msg = "a38_playpwm"         // Make pin a38 play a randomly generated sequence
+                    msg = "a37_playpwm"         // Make pin a37 play a randomly generated sequence
+                */
+                // Send the messag
+                STP.plugins.ioioSendMessage(
+                    [msg],
+                    function(result) {
+                        //console.log("IOIO Sucess: "+result);
+                    }, 
+                    function(err){
+                        console.log("IOIO Error: "+err);
+                    }
+                );
+            },
 
-            ioioGenSTring = function(str, newval){
-                /*
-                if(str==""){
-                    str = newval;
-                }else{
-                    str = str+","+newval;
-                }*/
-                return newval;
-            }
 
+            /* =======================================================
+             *  FILE SYSTEM  
+             * ======================================================= 
+             */
             // File system accessed.
             fsSuccessHandler = function( fileSystem ) {
-
                 var rootEntry = fileSystem.root,
                 rootSuccessHandler = function( dirEntry ) {
 
@@ -658,15 +668,11 @@ STP.app = function(){
                         },
                         fsErrorHandler );
                 };
-
                 // Get or create data directory.
                 rootEntry.getDirectory('southendtransportdata', { create : true },
                     rootSuccessHandler, fsErrorHandler );
-
             },
-
             createActivityFile = function( successCallback ) {
-
                 // Create directory with new id
                 self.data.title = new Date().toFormattedString();
                 dataDirEntry.getDirectory( self.data.title, { create : true },
@@ -684,9 +690,12 @@ STP.app = function(){
                         });
 
                     }, fsErrorHandler );
-
             },
 
+            /* =======================================================
+             *  ERROR HANDLERS
+             * ======================================================= 
+             */
             fileTransferErrorHandler = function( error ) {
                 // alert("An error has occurred: Code = " + error.code);
                 console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
@@ -716,15 +725,14 @@ STP.app = function(){
 
 
 
-/*
- * Generic model that allows DOM data binding.
- */
+/* =======================================================
+*  DOM DATA BINDING
+* ======================================================= 
+*/
 STP.BindableModel = function( uid ) {
     var binder = new UTIL.DataBinder( uid ),
-
         model = {
             attributes: {},
-
             // The attribute setter publish changes using the DataBinder PubSub
             set: function( attr_name, val ) {
                 this.attributes[ attr_name ] = val;
@@ -734,34 +742,31 @@ STP.BindableModel = function( uid ) {
             get: function( attr_name ) {
                 return this.attributes[ attr_name ];
             },
-
             _binder: binder
         };
-
     // Subscribe to the PubSub
     binder.on( uid + ":change", function( evt, attr_name, new_val, initiator ) {
         if ( initiator !== model ) {
             model.set( attr_name, new_val );
         }
     });
-
     return model;
 };
 
 
-/*
- * Plugins
- */
+/* =======================================================
+*  PLUGIN MANGEMENT
+* ======================================================= 
+*/
 STP.plugins = STP.plugins || {};
 
+/* Methods for the camera plugin. */
 STP.plugins.prepareCamera = function(callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "prepareCamera", []);
 };
-
 STP.plugins.takePicture = function(params, callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "takePicture", params);
 };
-
 STP.plugins.releaseCamera = function() {
     cordova.exec(function(){
             console.log("stoppedSuccessfully");
@@ -769,26 +774,16 @@ STP.plugins.releaseCamera = function() {
             alert("stoppedError");
         }, "CameraAccessNoUserAction", "releaseCamera", []);
 };
-
 STP.plugins.switchCamera = function(callbackSuccess, callbackError) {
     cordova.exec(callbackSuccess, callbackError, "CameraAccessNoUserAction", "switchCamera", []);
 };
 
-/* Functions for the IOIO plugin. 
+/* Methods for the IOIO plugin. 
  * Check the following is added to "res/xml/config": 
  *    <plugin name="IOIO" value="uk.org.opensystem.plugin.IOIOconnect"/>
  * And that a file exists called  at src/org/opensystem/plugin/IOIOconnect.java
  */
-STP.plugins.ioioIsAlive = function(params, callbackSuccess, callbackError) {
-    cordova.exec(
-        callbackSuccess, 
-        callbackError, 
-        "IOIOconnect", // References java file: IOIOconnect.java
-        "ioioIsAlive", // Action to perform
-        params
-    );
-};
-STP.plugins.ioioStartup = function(params, callbackSuccess, callbackError) {
+ STP.plugins.ioioStartup = function(params, callbackSuccess, callbackError) {
     cordova.exec(
         callbackSuccess, 
         callbackError, 
@@ -797,4 +792,21 @@ STP.plugins.ioioStartup = function(params, callbackSuccess, callbackError) {
         params
     );
 };
-// Moved UTILs to separate file.
+STP.plugins.ioioGrabData = function(params, callbackSuccess, callbackError) {
+    cordova.exec(
+        callbackSuccess, 
+        callbackError, 
+        "IOIOconnect", // References java file: IOIOconnect.java
+        "ioioGrabData", // Action to perform
+        params
+    );
+};
+STP.plugins.ioioSendMessage = function(params, callbackSuccess, callbackError) {
+    cordova.exec(
+        callbackSuccess, 
+        callbackError, 
+        "IOIOconnect", // References java file: IOIOconnect.java
+        "ioioSendMessage", // Action to perform
+        params
+    );
+};

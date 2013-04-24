@@ -23,26 +23,29 @@ public class IOIOconnect extends CordovaPlugin {
 	private Context thisContext;
 	private Intent ioioService;
 	private IOIOdataObj IOIOdata = new IOIOdataObj();
+	private Intent broadcastIntent = new Intent("msgIOIO");
     
     // Handle calls from Javascript
     //@SuppressLint("NewApi")
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        // Call from javascript to startup the IOIO service
+        
+    	// Call from javascript to startup the IOIO service
         if (action.equals("ioioStartup")) {
             this.ioioStartup(callbackContext); 
             return true;
         }
-        // Call from javascript to stop the IOIO service
-        if (action.equals("ioioStop")) {
-            this.ioioStartup(callbackContext); 
-            return true;
-        }
         // Call from javascript to grab current variables
-        if (action.equals("ioioIsAlive")) {
-            this.ioioIsAlive(args.getString(0), callbackContext); 
+        if (action.equals("ioioGrabData")) {
+            this.ioioGrabData(args.getString(0), callbackContext); 
             return true;
         }
+        // Tell the IOIO to trigger an event
+        if (action.equals("ioioSendMessage")) {
+            this.ioioSendMessage(args.getString(0), callbackContext); 
+            return true;
+        }        
+        
         return false;
     }
     
@@ -51,14 +54,16 @@ public class IOIOconnect extends CordovaPlugin {
     	// Initialise the service variables and start it it up
     	thisContext = this.cordova.getActivity().getApplicationContext();
     	ioioService = new Intent(thisContext, HelloIOIOService.class);
-        ioioService.putExtra("loadinterval", 500); // Set thread interval
+        ioioService.putExtra("loadinterval", 300); // Set thread interval
         thisContext.startService(ioioService);
+        IOIOdata.allEventsOn();
         
         // Setup a method to receive messages broadcast from the IOIO
         LocalBroadcastManager.getInstance(thisContext).registerReceiver(
                 mMessageReceiver, 
                 new IntentFilter("returnIOIOdata")
         );     
+        
         // Send a message back to the Javascript call
         Log.d("helloIOIOService.java", "IOIO Started from the plugin"); 
         callbackContext.success("Started IOIO service");
@@ -74,7 +79,7 @@ public class IOIOconnect extends CordovaPlugin {
     }
     
     // Echo strings back to javascript
-    private void ioioIsAlive(String msg, CallbackContext callbackContext) {
+    private void ioioGrabData(String msg, CallbackContext callbackContext) {
 
     	// Grab a JSON string ready to send to the .js callback
         String message = IOIOdata.getjson();
@@ -88,20 +93,33 @@ public class IOIOconnect extends CordovaPlugin {
         } else {
             callbackContext.error("IOIO.java Expected one non-empty string argument.");
         }
+        
     }
     
-
+    // Send a message to IOIO service
+    private void ioioSendMessage(String msg, CallbackContext callbackContext){
+    	// Which vars to send  
+    	broadcastIntent.putExtra("msg", msg);
+    	// Send the message to the IOIO
+        LocalBroadcastManager.getInstance(thisContext).sendBroadcast(broadcastIntent);
+    	//Log.d("helloIOIOService.java", "IOIO sent a message"); 
+    }
+    
     // Receive message from the IOIO device
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
     	@Override
     	public void onReceive(Context context, Intent intent) {
-    		// GSR sensor
-    		IOIOdata.a44 = intent.getFloatExtra("a44", (float) 0.0);
     		// Light sensor
-    		IOIOdata.a45 = intent.getFloatExtra("a45", (float) 0.0);
-    		IOIOdata.a45event = intent.getIntExtra("a45event", 0);
-    		if(IOIOdata.a45eventStored==0 && IOIOdata.a45event==1){
-    			IOIOdata.a45eventStored = 1;
+    		IOIOdata.a44 = intent.getFloatExtra("a44", (float) 0.0);
+    		IOIOdata.a44event = intent.getIntExtra("a44event", 0);
+    		if(IOIOdata.a44eventStored==0 && IOIOdata.a44event==1){
+    			IOIOdata.a44eventStored = 1;
+    		}
+    		// GSR sensor
+    		IOIOdata.a43 = intent.getFloatExtra("a43", (float) 0.0);
+    		IOIOdata.a43event = intent.getIntExtra("a43event", 0);
+    		if(IOIOdata.a43eventStored==0 && IOIOdata.a43event==1){
+    			IOIOdata.a43eventStored = 1;
     		}
     	}
     };
