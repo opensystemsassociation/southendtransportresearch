@@ -59,8 +59,6 @@ which the leaflet.js scripts generates visualisations from:
 
 Integration of ioio board
 -------------------------
-Currently developing a phonagap plugin for the IOIO board. 
-
 **The IOIO exmaples have been tested with**  
 - Android phone: The Samsung Gallaxy GT-19000
 - Android version: Android 2.3.6
@@ -70,6 +68,18 @@ Currently developing a phonagap plugin for the IOIO board.
 - Connection: Socket(ADB)
   
 With the configeration above, the IOIO hello world example worked with the IOIO 0330 libraries.
+
+**Parts list**  
+- IOIO-OTG board
+- 2x 8 gang screw fit headers
+- 3x 3 gang scree fit headers
+- 1x 2 gange headers
+- 1x 8 gange choc box screw connectors
+- 3x led's (red, green, yellow)
+- 2x 10k resitors (for light sensor & Galvanic Skin Response)
+- 1x 0.1uf Capacitor (for GSR sensor)
+- 1x light depeneded resistor (for light sensor)
+- Peforated protyping board
 
 **Usefull links**  
 IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads  
