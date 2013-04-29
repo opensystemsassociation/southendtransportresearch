@@ -71,15 +71,15 @@ With the configeration above, the IOIO hello world example worked with the IOIO 
 
 **Parts list**  
 - IOIO-OTG board
-- 2x 8 gang screw fit headers
-- 3x 3 gang scree fit headers
-- 1x 2 gange headers
+- 2x 8 way screw fit headers 2.45mm
+- 3x 3 way screw fit headers 2.45mm 
+- 1x 2 way screw fit headers 2.45mm
 - 1x 8 gange choc box screw connectors
 - 3x led's (red, green, yellow)
 - 2x 10k resitors (for light sensor & Galvanic Skin Response)
 - 1x 0.1uf Capacitor (for GSR sensor)
 - 1x light depeneded resistor (for light sensor)
-- Peforated protyping board
+- Peforated protyping board 2.45mm
 
 **Usefull links**  
 IOIO downloads: https://github.com/ytai/ioio/wiki/Downloads  
