@@ -88,8 +88,7 @@ We have used 7.5v 1300mah li-Po batteries.
 The Amps drawn by the IOIO board with 3 leds and a small speaker attached the phone 
 reached a maximum of 0.28 Amps so this battery should last around three hours or so.
 We use the following calculations to work this out:
-(BatteryMilliAmpHours/1000)/deviceAmp = Hours device will be powered.
-Calculations below:
+- (BatteryMilliAmpHours/1000)/deviceAmp = Hours device will be powered.
 - Our battery provides 1300 MilliAmps for one hour (1300mah).
 - Or 1.3 Amps for one hour (1300mah/1000=1.3Ah).
 - So 1.3A/0.28A = 4.6 hours this battery will last (though in real life, it probably wont be this long)
