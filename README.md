@@ -1,7 +1,32 @@
 SOUTHEND TRANSPORT
 ==================     
-A collection of scripts designed to collect transport data.
-  
+This project provides a collection of scripts and build instructions for an 
+android phone device that transmits GPS, GSR and other sensor data to a central server.
+The scripts and devices used include:
+- Phonegap android application with custom java modules.
+- IOIO device with attached light and GSR sensors.
+- PHP code to recieve posted data tracks (see below).
+- Rudimentary track mangment interface.
+- Map to display tracks using Leaflet Javascript library.
+
+Using the device  
+--------------
+On the android phone check:
+- Debugging mode is on.
+- The hone has a data connection.
+When the 'southend transport' application is started up:
+- Check that the yellow led on the IOIO device is flashing as this tells you the phone is in commminication with it.
+- Write a track description (click on the field and a popup text box will appear).
+- Click start.
+To stop the application:
+- Click the left hand menu icon.
+- Click 'Stop Activity'.
+- Click 'Exit application'
+Sometimes the application doesn't exit cleanly so if weirdness is occuring:
+- Select 'Task manager'.
+- Exit all applications.
+- Clear ram.
+- Then swipe down from the top of the screen & make sure the IOIO service is not running.
 
 Data Structure  
 --------------
