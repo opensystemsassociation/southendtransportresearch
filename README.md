@@ -6,14 +6,14 @@ The scripts and devices used include:
 - Phonegap android application with custom java modules.
 - IOIO device with attached light and GSR sensors.
 - PHP code to recieve posted data tracks (see below).
-- Rudimentary track mangment interface.
+- Rudimentary track management interface.
 - Map to display tracks using Leaflet Javascript library.
 
 Using the device  
 --------------
 On the android phone check:
 - Debugging mode is on.
-- The hone has a data connection.
+- The phone has a data connection.
 
 When the 'southend transport' application is started up:
 - Check that the yellow led on the IOIO device is flashing as this tells you the phone is in commminication with it.
