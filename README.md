@@ -21,7 +21,7 @@ When the 'southend transport' application is started up:
 - Click start.
 
 To stop the application:
-- Click the left hand menu icon.
+- Click the left hand menu touch-pad area on the phone.
 - Click 'Stop Activity'.
 - Click 'Exit application'
 
