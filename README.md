@@ -14,14 +14,17 @@ Using the device
 On the android phone check:
 - Debugging mode is on.
 - The hone has a data connection.
+
 When the 'southend transport' application is started up:
 - Check that the yellow led on the IOIO device is flashing as this tells you the phone is in commminication with it.
 - Write a track description (click on the field and a popup text box will appear).
 - Click start.
+
 To stop the application:
 - Click the left hand menu icon.
 - Click 'Stop Activity'.
 - Click 'Exit application'
+
 Sometimes the application doesn't exit cleanly so if weirdness is occuring:
 - Select 'Task manager'.
 - Exit all applications.
