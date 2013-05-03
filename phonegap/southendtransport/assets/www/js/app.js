@@ -393,7 +393,7 @@ STP.app = function(){
                     points.IOIOgsr.push( self.sensors['ioio'].get( 'ioio-gsr') );
                     points.IOIOgsrevent.push( self.sensors['ioio'].get( 'ioio-gsrevent') );   
 
-                    // Trigger the IOIO if there has been an acceleromter event
+                    // Trigger the IOIO if there has been an accelerometer event
                     if(shake!=1) ioioSendMessage("a37_playpwm");
 
                     // Reset stored events
@@ -582,6 +582,7 @@ STP.app = function(){
             ioioStart = function() {
                 //var ioioMsgInterval = window.setInterval(ioioSendMessage, 5000); // trigger IOIO data every 5 secs
                 var ioioInterval = window.setInterval(ioioGrabData, 500); // Grab IOIO data every 1/2 sec
+                //var intercasgs = window.setInterval( function() {alert(self.IOIOgsrStored) }, 4000);
                 ioioStartup();
             },
             // IOIO: Startup the main IOIO thread
