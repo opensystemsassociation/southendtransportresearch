@@ -393,9 +393,6 @@ STP.app = function(){
                     points.IOIOgsr.push( self.sensors['ioio'].get( 'ioio-gsr') );
                     points.IOIOgsrevent.push( self.sensors['ioio'].get( 'ioio-gsrevent') );   
 
-                    // Trigger the IOIO if there has been an accelerometer event
-                    if(shake!=1) ioioSendMessage("a37_playpwm");
-
                     // Reset stored events
                     accel.set('shake', 0);
                     IOIOgsrStored = 0,
@@ -499,23 +496,18 @@ STP.app = function(){
                 accel.set( 'z', a.z );
                 accel.set( 'combined', (a.x).toFixed(4)+":"+(a.y).toFixed(4)+":"+(a.z).toFixed(4) );
                 var delta = 0.00,
-                    shakeThreshold = 1.75; // This indicates a shake.
+                shakeThreshold = 1.55; // 1.75 This indicates a shake.
                 mAccelLast = mAccelCurrent;
                 mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
                 delta = mAccelCurrent - mAccelLast;
                 mAccel = mAccel * 0.9 + delta; // perform low-cut filter
       
-                // Accel interval is shorted than tick interval. This means
-                // a shake could happen and then be reset to 0 between tick
-                // intervals. Soooo, we only set shake value if new value is
-                // greater than previous AND we reset shake to 0 at 
-                // tick interval thus resetting. This retains the greatest
-                // shake value over shakeThreshold since the last tick.
-                if( mAccel > shakeThreshold 
-                        && mAccel-shakeThreshold > accel.get('shake') ) {
-                        accel.set( 'shake', (mAccel-shakeThreshold).toFixed(4) );
+                // Accel interval is shorter than tick interval. 
+                // Sooo shake is reset to 0 each time the tick grabs the shake event
+                if(mAccel > shakeThreshold) {
+                    accel.set( 'shake', 1);
+                    ioioSendMessage("a37_playpwm");
                 }
-
             },
 
             /* =======================================================
@@ -600,6 +592,9 @@ STP.app = function(){
             },
             // IOIO: Grab data from the ioio board if its available
             ioioGrabData = function(){
+                // Trigger the IOIO if there has been an accelerometer event
+                if(accel.get('shake')==1) ioioSendMessage("a37_playpwm");
+                // Now lets see if there is new data
                 var params = [""];
                 STP.plugins.ioioGrabData(params,
                     function(result) {

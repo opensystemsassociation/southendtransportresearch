@@ -48,19 +48,17 @@ public class southendtransport extends DroidGap
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection
-        switch (item.getItemId()) {
-        case R.id.choose_env:
-        	Log.d("southendtransport.java", "Choose env");
-            this.sendJavascript("javascript: stp.chooseEnv()");
-            return true;
-        case R.id.stop_activity:
-        	Log.d("southendtransport.java", "Schttop");
-            this.sendJavascript("javascript: stp.stopActivity()");
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
-        }
+        if (item.getItemId() == R.id.choose_env) {
+			Log.d("southendtransport.java", "Choose env");
+			this.sendJavascript("javascript: stp.chooseEnv()");
+			return true;
+		} else if (item.getItemId() == R.id.stop_activity) {
+			Log.d("southendtransport.java", "Schttop");
+			this.sendJavascript("javascript: stp.stopActivity()");
+			return true;
+		} else {
+			return super.onOptionsItemSelected(item);
+		}
     }
 
 }
