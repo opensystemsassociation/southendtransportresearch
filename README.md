@@ -1,4 +1,4 @@
-COPYING PERMISSION 
+PERMISSIONS 
 ==================
     This file is part of the "Curbside Diaries" project.
     "Curbside Diaries" is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@ On the android phone check:
 
 When the 'southend transport' application is started up:
 - Check that the yellow led on the IOIO device is flashing as this tells you the phone is in commminication with it.
+- If the yellow led isn't flashing then replug the usb cable.
 - Write a track description (click on the field and a popup text box will appear).
 - Click start.
 
