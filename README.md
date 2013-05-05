@@ -1,9 +1,9 @@
 PERMISSIONS 
 ==================
-    This file is part of the "Curbside Diaries" project.
+    This file is part of the Southend "Curbside Diaries" project.
     "Curbside Diaries" is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, version 3 of the License.
+    the Free Software Foundation, version 3 (and later) of the License.
 
     "Curbside Diaries" is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -67,12 +67,18 @@ Data Structure
             "points" : {
                   "elapsed" 		: [ [1],[6],[11],[16] ],
                   "gps" 		: [ [lat,lng],[lat,lng],[lat,lng],[lat,lng] ],
-                  "imagefile" 		: ["name2.jpg",0,0,"name2.jpg"],
+                  "gps_accuracy"	: [100, 10, 20, 30],
+                  "gps_timestamp"	: [125757,454545,45454545,4545455]
+                  "image" 		: ["name2.jpg",0,0,"name2.jpg"],
                   "accelerometer" 	: [ [x,y,z], [x,y,z], 0, [x-y-z] ],
-                  "shakeevent" 	: [0,1,0,0]
+                  "shakeevent" 		: [0,1,0,0]
+                  "IOIOlight"   	: [0.0, 0.5555, 0.777, 1.0],
+                  "IOIOlightevent"   	: [0,1,0,1],
+                  "IOIOgsr"   		: [0.0, 0.5555, 0.777, 1.0],
+                  "IOIOgsrevent"   	: [0,1,0,1] 
             }
 	}
-    }
+    }               
 Folder Structure
 ----------------
 New tracks with associate files can be directly added to the folder structure.
