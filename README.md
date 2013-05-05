@@ -12,6 +12,14 @@ PERMISSIONS
 
     You should have received a copy of the GNU General Public License
     along with "Curbside Diaries".  If not, see <http://www.gnu.org/licenses/>.
+    
+    This code has been written by:
+    Tom Keene: www.theanthillsocial.co.uk | tom[at]theanthillsocial.co.uk
+    Gareth Foote: www.garethfoote.co.uk | gareth [at] garethfoote.co.uk
+    
+    In association with:
+    Yoha: www.yoha.co.uk
+    Open systems Association: www.opensystem.org.uk
 
 CURBSIDE DIARIES
 ==================     
