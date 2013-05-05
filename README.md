@@ -17,9 +17,9 @@ PERMISSIONS
     Tom Keene: www.theanthillsocial.co.uk | tom[at]theanthillsocial.co.uk
     Gareth Foote: www.garethfoote.co.uk | gareth [at] garethfoote.co.uk
     
-    In association with:
-    Yoha: www.yoha.co.uk
-    Open systems Association: www.opensystem.org.uk
+    For a project produced b:
+    YoHa: www.yoha.co.uk
+    Open Systems Association: www.opensystem.org.uk
 
 CURBSIDE DIARIES
 ==================     
