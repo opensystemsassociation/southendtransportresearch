@@ -30,13 +30,12 @@
             <div class="environment">
                 <select id="environments"></select>
             </div>
-                <div>
+            <div>
                 UPLOADED: <span id="uploadedcnt" data-bind-appstate="uploadedcnt-str">??</span> | 
                 <span id="ioio" data-bind-ioio="ioio-str">??</span> | 
                 SHAKE: <span id="shake" data-bind-accel="shake">??</span> |
-                CURR POS:
-                <span class="message" data-bind-geoloc="message">?</span>
-
+                CURRpOS: <span class="message" data-bind-geoloc="message">?</span> 
+                <div id="sensorstr">??</div> 
             </div>
             <dl class="data-container">
                 <dt class="label">Now</dt>
@@ -65,14 +64,15 @@
             <textarea class="description" id="description" placeholder="Add a description of the journey"></textarea>
             <div class="tag">
                 <select id="tags"></select>
-            <!--
-            <div id="tags">
-                <a class="current-indicator">Select tag</a>
-                <ul class="list-parent"></ul>
+                <!--
+                <div id="tags">
+                    <a class="current-indicator">Select tag</a>
+                    <ul class="list-parent"></ul>
+                </div>
+                -->
+                <button class="start hide" onclick="stp.startActivity();">Start</button>
+                <button class="exit hide" onclick="stp.exitApplication();">Exit</button>
             </div>
-            -->
-            <button class="start hide" onclick="stp.startActivity();">Start</button>
-            <button class="exit hide" onclick="stp.exitApplication();">Exit</button>
         </div>
         <script type="text/javascript" src="cordova-2.5.0.js"></script>
         <script type="text/javascript" src="js/lib/jquery/jquery-1.9.1.min.js"></script>

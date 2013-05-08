@@ -40,6 +40,8 @@ public class HelloIOIOService extends IOIOService {
 	private static String TAG = "helloIOIOService.java";
 	private int ledinterval = 10;
 	private int threadInterval = 10;
+	private double gsrThresh = 0.02;
+	private double ldrThresh = 0.05;
 	private boolean onoff  = false;
 	private boolean autotriggers  = true;
 	private int counter = 0;
@@ -55,6 +57,7 @@ public class HelloIOIOService extends IOIOService {
 		
         // IOIO When service is started load external vars (if set)
 		int loadinterval = intent.getIntExtra("loadinterval", -1);
+		
 		if(loadinterval>=0){ threadInterval = loadinterval; }
 		Log.d(TAG, "IOIO started service. ThreadInt:"+threadInterval);
 	    
@@ -123,18 +126,18 @@ public class HelloIOIOService extends IOIOService {
 				
 				// Light sensor: Check if there has been a rapid change of event
 				IOIOdata.a44 = a44_.read();
-				IOIOdata.a44event = lightEventObj.checkEvent("LIGHT", IOIOdata.a44, 0.05);
+				IOIOdata.a44event = lightEventObj.checkEvent("LIGHT", IOIOdata.a44, ldrThresh);
 				if(IOIOdata.a44event==1) lightTuneObj_.playTune(750);
 				a46_.setDutyCycle( lightTuneObj_.checkMe() );
 				
 				// GSR Sensor: Read input and set PWM out
 				IOIOdata.a43 = gsrSmoothObj.readSmooth( a43_.read() );
-				IOIOdata.a43event = gsrEventObj.checkEvent("GSR", IOIOdata.a43, 0.05);
+				IOIOdata.a43event = gsrEventObj.checkEvent("GSR", IOIOdata.a43, gsrThresh);
 				if(IOIOdata.a43event==1) gsrTuneObj_.playTune(750);
 				a38_.setDutyCycle( gsrTuneObj_.checkMe() );
 				
 				// Js: Trigger output if JS tells us
-				if(IOIOdata.jsevent==1) jsTuneObj_.playTune(750);
+				if(IOIOdata.jsevent==1) jsTuneObj_.playTune(500);
 				a37_.setDutyCycle( jsTuneObj_.checkMe() );
 				
 				// Send all recorded Vars to IOIO plugin
@@ -168,7 +171,7 @@ public class HelloIOIOService extends IOIOService {
 			double plus = val-lastVal;
 			double minus = lastVal-val;
 			if(plus>=range || minus>=range){
-				Log.d(TAG, "IOIO "+ref+" p:"+plus+" v:"+val );
+				//Log.d(TAG, "IOIO "+ref+" p:"+plus+" v:"+val );
 				event = 1;
 			}else{
 				event = 0;

@@ -55,6 +55,7 @@ public class IOIOconnect extends CordovaPlugin {
     	thisContext = this.cordova.getActivity().getApplicationContext();
     	ioioService = new Intent(thisContext, HelloIOIOService.class);
         ioioService.putExtra("loadinterval", 300); // Set thread interval
+        ioioService.putExtra("loadinterval", 300); // Set thread interval
         thisContext.startService(ioioService);
         IOIOdata.allEventsOn();
         
