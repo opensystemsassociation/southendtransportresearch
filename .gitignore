@@ -1,4 +1,7 @@
 *.metadata*
 *project.properties
-*/bin/*
 *.classpath
+phonegap/southendtransport/bin/*
+phonegap/IOIO/IOIOLibBT/bin/*
+phonegap/IOIO/IOIOLibAccessory/bin/*
+phonegap/IOIO/IOIOLib/target/*

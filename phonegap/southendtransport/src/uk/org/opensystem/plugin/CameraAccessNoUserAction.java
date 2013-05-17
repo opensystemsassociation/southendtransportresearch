@@ -1,6 +1,7 @@
 package uk.org.opensystem.plugin;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +20,8 @@ import uk.org.opensystem.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
@@ -51,6 +54,7 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
     int defaultCameraId;
 	private String imageDirectory = null;
 	private String imageName = null;
+	private int newWidth = 500;
 
 	@Override
 	public boolean execute(String action, JSONArray args,
@@ -100,7 +104,8 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 		if ("takePicture".equals(action)) {
 			// Save image here.
 			imageDirectory = args.getString(0);
-			imageName = args.getString(1);				
+			imageName = args.getString(1);
+			if( args.length() >= 3 ) newWidth = args.getInt(2);				
 			
 			takePicture();
 				
@@ -233,27 +238,55 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 		@Override
 		protected String doInBackground(byte[]... jpeg) {
 
-			File photo = new File(imageDirectory, imageName);
-
-			// Create the storage directory if it does not exist
-			if (!photo.exists()) {
-				if (!photo.mkdirs()) {
-					Log.d(TAG, "failed to create directory");
+			// Create directories. Original is deepest so create this and 
+			// it will create parents.
+			File directoryOriginal = new File(imageDirectory+"/original/");
+			if (!directoryOriginal.exists()) {
+				if (!directoryOriginal.mkdirs()) {
+					Log.e(TAG, "failed to create 'original' directory");
 					callbackContext.error("Failed to write");
 					return null;
 				}
 			}
-
-			if (photo.exists()) {
-				photo.delete();
+			
+			// -- Original Size
+			File photoOriginal = new File(imageDirectory+"/original/", imageName);
+			FileOutputStream fosOriginal = null;
+			
+			// Create File Stream.
+			try {
+				fosOriginal = new FileOutputStream(photoOriginal.getPath());
+			} catch (FileNotFoundException e) {
+				Log.e(TAG, "File not found:" +imageName, e);
+				callbackContext.error("File not found:" + photoOriginal.getPath());
+			}
+	
+			// -- Reduced size
+			File photo = new File(imageDirectory, imageName);
+			FileOutputStream fos = null;
+			
+			// -- Reduced - Create File Stream.
+			try {
+				fos = new FileOutputStream(photo.getPath());
+			} catch (FileNotFoundException e) {
+				Log.e(TAG, "File not found:"+imageName, e);
+				callbackContext.error("File not found:"+photo.getPath());
 			}
 
+			// Decode into Bitmap & compress/write original size.
+			Bitmap imgOriginal = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
+			imgOriginal.compress(Bitmap.CompressFormat.JPEG, 90, fosOriginal);
+			
+			// Calculate scaled down height from set width.
+			float ratio = (float) newWidth / (float) imgOriginal.getWidth();
+			int newHeight = Math.round(imgOriginal.getHeight()*ratio);
+
+			// Decode, scale and compress/write.
+			Bitmap img = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
+			img = Bitmap.createScaledBitmap(img, newWidth, newHeight, false);
+			img.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+			
 			try {
-				FileOutputStream fos = new FileOutputStream(photo.getPath());
-
-				fos.write(jpeg[0]);
-				fos.close();
-
 				// Send result back to PhoneGap.
 		        JSONObject resultData = new JSONObject();
 		        resultData.put( "action", "takePicture" ).put("filename", imageDirectory + "/" + imageName);
@@ -261,11 +294,7 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 		        // Ensure callback stays active.
 		        result.setKeepCallback(true); 
 		        callbackContext.sendPluginResult(result);
-				
-				
-			} catch (java.io.IOException e) {
-				Log.e(TAG, "Exception in photoCallback", e);
-				callbackContext.error("Failed to write");
+
 			} catch (JSONException e) {
 				Log.e(TAG, "JSON Exception", e);
 			}

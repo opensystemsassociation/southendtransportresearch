@@ -393,6 +393,9 @@ STP.app = function(){
                     points.IOIOgsr.push( self.sensors['ioio'].get( 'ioio-gsr') );
                     points.IOIOgsrevent.push( self.sensors['ioio'].get( 'ioio-gsrevent') );   
 
+                    // Reset accel shake.
+                    accel.set('shake', 0);
+
                     // Select the trigger for taking a picture
                     var imagename = 0; 
                     var newevent = 0;
@@ -545,18 +548,20 @@ STP.app = function(){
                 accel.set( 'y', a.y );
                 accel.set( 'z', a.z );
                 accel.set( 'combined', (a.x).toFixed(4)+":"+(a.y).toFixed(4)+":"+(a.z).toFixed(4) );
+
                 var delta = 0.00,
-                shakeThreshold = self.config.accelSensitivity; //2.8; // This indicates a shake. accelSensitivity
-                mAccelLast = mAccelCurrent;
-                mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
-                delta = mAccelCurrent - mAccelLast;
-                mAccel = mAccel * 0.9 + delta; // perform low-cut filter
+                    shakeThreshold = self.config.accelSensitivity; //2.8; // This indicates a shake. accelSensitivity
+                    mAccelLast = mAccelCurrent;
+                    mAccelCurrent = Math.sqrt((a.x*a.x + a.y*a.y + a.z*a.z));
+                    delta = mAccelCurrent - mAccelLast;
+                    mAccel = mAccel * 0.9 + delta; // perform low-cut filter
       
                 // Accel interval is shorter than tick interval. 
                 // Sooo shake is reset to 0 each time the tick grabs the shake event
                 // Trigger an IOIO output if we find a shake event
-                if(mAccel > shakeThreshold) {
-                    accel.set( 'shake', 1);
+                if(mAccel > shakeThreshold
+                        && mAccel-shakeThreshold > accel.get('shake')) {
+                    accel.set( 'shake', (mAccel-shakeThreshold).toFixed(4) );
                     ioioSendMessage("a37_playpwm");
                 }
             },
@@ -568,7 +573,8 @@ STP.app = function(){
             takePicture = function( filename ) {
                 var params = [
                     activityDirEntry.fullPath.replace('file://',''),
-                    filename
+                    filename,
+                    200 // max pixel width
                 ];
                 cameraBusy = true;
                 STP.plugins.takePicture(params,
@@ -740,7 +746,7 @@ STP.app = function(){
              * ======================================================= 
              */
             fileTransferErrorHandler = function( error ) {
-                // alert("An error has occurred: Code = " + error.code);
+                alert("An error has occurred: Code = " + error.code);
                 console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
             },
             writeErrorHandler = function( msg ) {
