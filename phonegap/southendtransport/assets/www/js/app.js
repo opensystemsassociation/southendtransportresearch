@@ -746,7 +746,7 @@ STP.app = function(){
              * ======================================================= 
              */
             fileTransferErrorHandler = function( error ) {
-                alert("An error has occurred: Code = " + error.code);
+                // alert("An error has occurred: Code = " + error.code);
                 console.log(" File upload error. Source: " + error.source + " / Target: " + error.target);
             },
             writeErrorHandler = function( msg ) {
