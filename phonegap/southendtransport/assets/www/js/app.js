@@ -574,7 +574,7 @@ STP.app = function(){
                 var params = [
                     activityDirEntry.fullPath.replace('file://',''),
                     filename,
-                    200 // max pixel width
+                    500 // max pixel width
                 ];
                 cameraBusy = true;
                 STP.plugins.takePicture(params,
