@@ -34,7 +34,7 @@ STP.app = function(){
             whichgps : "currentpos",        // Select the type of GPS recording [watch, currentpos] 
             tickInterval: 1000,       // millisecs
             distanceThreshold: 1000,  // Meters - discard lat/lon further than this distance
-            accelSensitivity: 3.0,    // Threshold to trigger an accel event
+            accelSensitivity: 6.0,    // Threshold to trigger an accel event
             recordInterval : 5,
             geoUpdateInterval : 2000,
             sendCurrPosInterval : 10000,
@@ -393,15 +393,12 @@ STP.app = function(){
                     points.IOIOgsr.push( self.sensors['ioio'].get( 'ioio-gsr') );
                     points.IOIOgsrevent.push( self.sensors['ioio'].get( 'ioio-gsrevent') );   
 
-                    // Reset accel shake.
-                    accel.set('shake', 0);
-
                     // Select the trigger for taking a picture
                     var imagename = 0; 
                     var newevent = 0;
                     switch($("#tags option:selected").val()){
                         case "Take image on Accellerometer event" :
-                            if(accel.get('shake')==1) newevent = 1;
+                            if(accel.get('shake')<=1) newevent = 1;
                             break;
                         case "Take image on GSR event" :
                             if( self.sensors['ioio'].get( 'ioio-gsrevent') == 1) newevent = 1;
