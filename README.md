@@ -14,9 +14,10 @@
     
     This code has been written by:
     Tom Keene: www.theanthillsocial.co.uk | tom[at]theanthillsocial.co.uk
+    and
     Gareth Foote: www.garethfoote.co.uk | gareth [at] garethfoote.co.uk
     
-    For a project produced b:
+    For a project produced by:
     YoHa: www.yoha.co.uk
     Open Systems Association: www.opensystem.org.uk
 
