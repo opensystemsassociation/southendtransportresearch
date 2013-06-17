@@ -21,7 +21,7 @@
     YoHa: www.yoha.co.uk
     Open Systems Association: www.opensystem.org.uk
 
-CURBSIDE DIARIES
+KERBSIDE DIARIES
 ==================     
 This project provides a collection of scripts and build instructions for an 
 android phone device that transmits GPS, GSR and other sensor data to a central server.
