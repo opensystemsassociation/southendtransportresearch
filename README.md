@@ -55,6 +55,11 @@ Sometimes the application doesn't exit cleanly so if weirdness is occuring:
 - Clear ram.
 - Then swipe down from the top of the screen & make sure the IOIO service is not running.
 
+UPLOAD
+- Upload images to the correct directory
+- Use this script to resize: mogrify -resize 200x150 *.jpg
+
+
 Data Structure  
 --------------
     {
