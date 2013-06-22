@@ -31,6 +31,7 @@ STP.app = function(){
 
         // Phone config. These values are utalised, then over-ridden by the file on the remote server
         this.config = {
+            gpsStopCnt : 0, 
             whichgps : "currentpos",        // Select the type of GPS recording [watch, currentpos] 
             tickInterval: 1000,       // millisecs
             distanceThreshold: 1000,  // Meters - discard lat/lon further than this distance
@@ -124,8 +125,9 @@ STP.app = function(){
                 alert("Please enter a track description");
                 return;
             }
-            if(lat==-1 && lon==-1){
-                alert("GPS not set, please wait for values to be set and/or check your GPS settings.");
+            if(lat==-1 && lon==-1 && self.config.gpsStopCnt<=2 ){
+                alert("GPS not set, please wait for values to be set and/or check your GPS settings. (Can start after 3 attempts)");
+                self.config.gpsStopCnt++;
                 return;                
             }
             // Set start time.
@@ -571,7 +573,7 @@ STP.app = function(){
                 var params = [
                     activityDirEntry.fullPath.replace('file://',''),
                     filename,
-                    500 // max pixel width
+                    200 // max pixel width
                 ];
                 cameraBusy = true;
                 STP.plugins.takePicture(params,

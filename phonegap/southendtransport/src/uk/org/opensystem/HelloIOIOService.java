@@ -40,7 +40,7 @@ public class HelloIOIOService extends IOIOService {
 	private static String TAG = "helloIOIOService.java";
 	private int ledinterval = 10;
 	private int threadInterval = 10;
-	private double gsrThresh = 0.02;
+	private double gsrThresh = 0.009; // The lower the value the more sensitive
 	private double ldrThresh = 0.05;
 	private boolean onoff  = false;
 	private boolean autotriggers  = true;
