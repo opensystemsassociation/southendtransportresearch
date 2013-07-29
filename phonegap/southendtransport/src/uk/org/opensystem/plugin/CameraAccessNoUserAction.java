@@ -249,42 +249,35 @@ public class CameraAccessNoUserAction extends CordovaPlugin {
 				}
 			}
 			
-			// -- Original Size
+			// -- Create Original Size Image
 			File photoOriginal = new File(imageDirectory+"/original/", imageName);
 			FileOutputStream fosOriginal = null;
-			
-			// Create File Stream.
-			try {
+			try{
 				fosOriginal = new FileOutputStream(photoOriginal.getPath());
 			} catch (FileNotFoundException e) {
 				Log.e(TAG, "File not found:" +imageName, e);
 				callbackContext.error("File not found:" + photoOriginal.getPath());
 			}
-	
-			// -- Reduced size
+			Bitmap imgOriginal = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
+			Bitmap imgCopy = imgOriginal;
+			imgOriginal.compress(Bitmap.CompressFormat.JPEG, 90, fosOriginal);
+			
+			// -- Create Reduced size Image
 			File photo = new File(imageDirectory, imageName);
 			FileOutputStream fos = null;
-			
-			// -- Reduced - Create File Stream.
 			try {
 				fos = new FileOutputStream(photo.getPath());
 			} catch (FileNotFoundException e) {
 				Log.e(TAG, "File not found:"+imageName, e);
 				callbackContext.error("File not found:"+photo.getPath());
 			}
-
-			// Decode into Bitmap & compress/write original size.
-			Bitmap imgOriginal = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
-			imgOriginal.compress(Bitmap.CompressFormat.JPEG, 90, fosOriginal);
-			
-			// Calculate scaled down height from set width.
-			float ratio = (float) newWidth / (float) imgOriginal.getWidth();
+			int smallWidth = 200;
+			float ratio = (float) smallWidth / (float) imgOriginal.getWidth();
 			int newHeight = Math.round(imgOriginal.getHeight()*ratio);
-
-			// Decode, scale and compress/write.
-			Bitmap img = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
-			img = Bitmap.createScaledBitmap(img, newWidth, newHeight, false);
-			img.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+			int newWidth = Math.round(imgOriginal.getWidth()*ratio);
+			//Bitmap smallImg = BitmapFactory.decodeByteArray(jpeg[0], 0, jpeg[0].length);	
+			imgCopy = Bitmap.createScaledBitmap(imgCopy, newWidth, newHeight, false);
+			imgCopy.compress(Bitmap.CompressFormat.JPEG, 90, fos);
 			
 			try {
 				// Send result back to PhoneGap.
